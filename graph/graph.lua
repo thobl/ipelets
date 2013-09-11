@@ -131,35 +131,39 @@ local sqEps = 1
 function moveEndpoints(oldPos, newPos, p, model)
    -- print(model.vno)
    for i, obj, sel, layer in p:objects() do
+      -- do nothing if the object is invisible and invisible objects
+      -- should not be moved
       if not p:visible(model.vno, layer) and
 	 not moveInvisibleObjects then
 	 goto continue
       end
-      if obj:type() == "path" then
-	 local shape = obj:shape()
-	 for _, subPath in ipairs(shape) do
-	    if (subPath["type"] == "curve") then
-	       for _,seg in ipairs(subPath) do
-		  if (seg["type"] == "segment") then
-		     for j, point in ipairs(seg) do
-			-- print(j, point, oldPos)
-			if (obj:matrix() * point - oldPos):sqLen() < sqEps then
-			   seg[j] = obj:matrix():inverse() * newPos
-			   -- print("test", seg[j])
-			end 
-		     end
-		  elseif (seg["type"] == "spline") then
-		     if (obj:matrix() * seg[1] - oldPos):sqLen() < sqEps then
-			seg[1] = obj:matrix():inverse() * newPos
-		     end
-		     if (obj:matrix() * seg[#seg] - oldPos):sqLen() < sqEps then
-			seg[#seg] = obj:matrix():inverse() * newPos
-		     end
+      -- do nothing if it is not a path
+      if obj:type() ~= "path" then
+	 goto continue
+      end
+      local shape = obj:shape()
+      for _, subPath in ipairs(shape) do
+	 if (subPath["type"] == "curve") then
+	    for _,seg in ipairs(subPath) do
+	       if (seg["type"] == "segment") then
+		  for j, point in ipairs(seg) do
+		     -- print(j, point, oldPos)
+		     if (obj:matrix() * point - oldPos):sqLen() < sqEps then
+			seg[j] = obj:matrix():inverse() * newPos
+			-- print("test", seg[j])
+		     end 
+		  end
+	       elseif (seg["type"] == "spline") then
+		  if (obj:matrix() * seg[1] - oldPos):sqLen() < sqEps then
+		     seg[1] = obj:matrix():inverse() * newPos
+		  end
+		  if (obj:matrix() * seg[#seg] - oldPos):sqLen() < sqEps then
+		     seg[#seg] = obj:matrix():inverse() * newPos
 		  end
 	       end
 	    end
-	    obj:setShape(shape)
 	 end
+	 obj:setShape(shape)
       end
       ::continue::
    end
