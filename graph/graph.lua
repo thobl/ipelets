@@ -6,12 +6,21 @@ label = "Graph"
 about = [[ Some features making it easier to work with graphs. ]]
 
 local deactivateGraphMode = false
+local moveInvisibleObjects = false
 
 function toggleGraphMode ()
    if deactivateGraphMode then
       deactivateGraphMode = false
    else 
       deactivateGraphMode = true
+   end
+end
+
+function toggleMoveInvisible ()
+   if moveInvisibleObjects then
+      moveInvisibleObjects = false
+   else 
+      moveInvisibleObjects = true
    end
 end
 
@@ -111,7 +120,7 @@ function _G.EDITTOOL:key(code, modifiers, text)
 	       undo = _G.revertOriginal,}
    t.redo = function (t, doc)
       p:transform(currMarkId, ipe.Translation(newPos-oldPos))
-      moveEndpoints(oldPos, newPos, p)
+      moveEndpoints(oldPos, newPos, p, self.model)
    end
    self.model:register(t)
 end
@@ -119,8 +128,13 @@ end
 -- function moving all endpoints and intermediate points in polylines
 -- to newPos, if the squared distance to oldPos is at most sqEps
 local sqEps = 1
-function moveEndpoints(oldPos, newPos, p)
+function moveEndpoints(oldPos, newPos, p, model)
+   -- print(model.vno)
    for i, obj, sel, layer in p:objects() do
+      if not p:visible(model.vno, layer) and
+	 not moveInvisibleObjects then
+	 goto continue
+      end
       if obj:type() == "path" then
 	 local shape = obj:shape()
 	 for _, subPath in ipairs(shape) do
@@ -147,6 +161,7 @@ function moveEndpoints(oldPos, newPos, p)
 	    obj:setShape(shape)
 	 end
       end
+      ::continue::
    end
 end
 
@@ -221,7 +236,7 @@ function getString(model, string)
 end
 
 function shorten(model, num)
-   num = num - 1
+   num = num - 2
    local lenTarget = 0
    local lenSource = 0
    -- local str = ipeui.getString(model.ui, "Enter length")
@@ -269,6 +284,7 @@ end
 
 methods = {
    { label = "toggle graph mode", run=toggleGraphMode },
+   { label = "toggle move invisible", run=toggleMoveInvisible },
    { label = "shorten target", run=shorten },
    { label = "shorten source", run=shorten },
    { label = "shorten both", run=shorten },
