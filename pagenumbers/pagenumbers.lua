@@ -3,7 +3,7 @@
 ----------------------------------------------------------------------
 label = "Pagenumbers"
 
-about = [[ blubb ]]
+about = [[ An Ipelet for printing customizable pagenumbers to the pages. ]]
 
 local prefix = "pagenumbers"
 local format_layer = prefix .. "_format"
@@ -72,7 +72,7 @@ end
 
 function print_on_ever_page(model, pagenr_objects)
    local doc = model.doc
-   print "copy.."
+   -- print "copy.."
    -- first create the clones
    -- print "create clones"
    local clones = {}
@@ -154,5 +154,16 @@ function page_has_layer(p, layer)
    return false
 end
 
+----------------------------------------------------------------------
+-- show some message if someone clicks in the iplet menu -------------
+function run()
+   ipeui.messageBox(nil,
+		    "information",
+		    "Nothing to do here.",
+		    [[
+This ipelet is used differently...
+todo: add some text]],
+		    nil)
+end
 
 ----------------------------------------------------------------------
