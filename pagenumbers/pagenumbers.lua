@@ -21,7 +21,7 @@ _G.MODEL.pagenumbers_backup_runLatex = _G.MODEL.runLatex
 
 function _G.MODEL:runLatex()
    refresh_pagenumbers(self)
-   self:pagenumbers_backup_runLatex()
+   return self:pagenumbers_backup_runLatex()
 end
 
 
