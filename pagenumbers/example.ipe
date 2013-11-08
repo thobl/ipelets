@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE ipe SYSTEM "ipe.dtd">
 <ipe version="70005" creator="Ipe 7.1.4">
-<info created="D:20130916175424" modified="D:20130916180147"/>
+<info created="D:20130916175424" modified="D:20131106104559"/>
 <ipestyle name="basic">
 <symbol name="arrow/arc(spx)">
 <path stroke="sym-stroke" fill="sym-stroke" pen="sym-pen">
@@ -202,13 +202,13 @@ h
 <dashstyle name="dash dotted" value="[4 2 1 2] 0"/>
 <dashstyle name="dash dot dotted" value="[4 2 1 2 1 2] 0"/>
 <textsize name="large" value="\large"/>
+<textsize name="small" value="\small"/>
+<textsize name="tiny" value="\tiny"/>
 <textsize name="Large" value="\Large"/>
 <textsize name="LARGE" value="\LARGE"/>
 <textsize name="huge" value="\huge"/>
 <textsize name="Huge" value="\Huge"/>
-<textsize name="small" value="\small"/>
 <textsize name="footnote" value="\footnotesize"/>
-<textsize name="tiny" value="\tiny"/>
 <textstyle name="center" begin="\begin{center}" end="\end{center}"/>
 <textstyle name="itemize" begin="\begin{itemize}" end="\end{itemize}"/>
 <textstyle name="item" begin="\begin{itemize}\item{}" end="\end{itemize}"/>
@@ -234,7 +234,7 @@ h
 <layer name="pagenumbers_format"/>
 <layer name="pagenumbers_dont_count"/>
 <layer name="pagenumbers_page" edit="no"/>
-<view layers="alpha pagenumbers_format" active="alpha"/>
+<view layers="alpha pagenumbers_format" active="pagenumbers_format"/>
 <text layer="pagenumbers_format" matrix="3.25388 0 0 3.25388 -597.057 -1005.68" pos="272 432" stroke="black" type="label" width="71.205" height="18.587" depth="6.2" halign="center" valign="center" size="Huge">{\bf [page]}</text>
 <text matrix="1 0 0 1 32 -80" pos="192 640" stroke="black" type="minipage" width="128" height="21.552" depth="16.61" valign="top" size="LARGE">The current page is: [page]</text>
 <text layer="alpha" matrix="1 0 0 1 0 16" pos="128 704" stroke="black" type="minipage" width="352" height="66.516" depth="61.67" valign="top" size="large">\begin{itemize}

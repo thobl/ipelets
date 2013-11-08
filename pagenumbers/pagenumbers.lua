@@ -40,12 +40,13 @@ function refresh_pagenumbers(model)
       local t = { label = "refresh pagenumbers (not undoable)",
 		  model = model }
       t.redo = function (t, doc)
-	 print_on_ever_page(t.model, pagenr_objects)
+	 print_on_every_page(t.model, pagenr_objects)
       end
       t.undo = function (t, doc)
 	 -- no undo possible..
       end
-      model:register(t)
+      -- model:register(t)
+      print_on_every_page(model, pagenr_objects)
    end
 end
 
@@ -70,7 +71,7 @@ end
 ----------------------------------------------------------------------
 -- print given pagenumber objects on every page ----------------------
 
-function print_on_ever_page(model, pagenr_objects)
+function print_on_every_page(model, pagenr_objects)
    local doc = model.doc
    -- print "copy.."
    -- first create the clones
