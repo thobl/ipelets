@@ -161,9 +161,9 @@ function run()
    ipeui.messageBox(nil,
 		    "information",
 		    "Nothing to do here.",
-		    [[
-This ipelet is used differently...
-todo: add some text]],
+		    [[Information on how to use this ipelet can be found in the Ipe Wiki.
+ (http://lamut.informatik.uni-wuerzburg.de/mediawiki/ipe7/index.php/Pagenumbers_Ipelet)
+]],
 		    nil)
 end
 
