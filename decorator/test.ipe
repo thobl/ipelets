@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE ipe SYSTEM "ipe.dtd">
 <ipe version="70005" creator="Ipe 7.1.4">
-<info created="D:20131216154906" modified="D:20131217104017"/>
+<info created="D:20131216154906" modified="D:20131217184840"/>
 <preamble>\usepackage[english]{babel}
 \usepackage{blindtext}</preamble>
 <ipestyle name="basic">
@@ -213,6 +213,47 @@ h
 h
 </path>
 </symbol>
+<symbol name="deco/tabbed-test">
+<path stroke="black" fill="lightgray">
+-5 5 m
+-5 11 l
+1 11 l
+4 0 0 -4 1 7 5 7 a
+5 5 l
+-5 5 m
+-5 -1 l
+4 0 0 4 -1 -1 -1 -5 a
+5 -5 l
+5 1 l
+5 5 l
+-5 5 m
+5 5 l
+</path>
+</symbol>
+<symbol name="deco/test">
+<group>
+<path matrix="1 0 0 1 10 50" stroke="black" fill="lightgray">
+10 2 m
+8 0 0 8 2 2 2 10 a
+-10 10 l
+-10 -2 l
+8 0 0 8 -2 -2 -2 -10 a
+10 -10 l
+h
+</path>
+<path matrix="1 0 0 1 10 50" stroke="black">
+-10 10 m
+10 -10 l
+</path>
+<path matrix="1 0 0 1 -6 34" stroke="black">
+12 20 m
+12 12 l
+20 12 l
+20 20 l
+h
+</path>
+</group>
+</symbol>
 <pen name="heavier" value="0.8"/>
 <pen name="fat" value="1.2"/>
 <pen name="ultrafat" value="2"/>
@@ -284,7 +325,37 @@ h
 <page>
 <layer name="alpha"/>
 <view layers="alpha" active="alpha"/>
-<path layer="alpha" stroke="black" fill="lightgray">
+<group layer="alpha">
+<path stroke="black" fill="lightgray">
+582 166 m
+8 0 0 8 574 166 574 174 a
+266 174 l
+266 65.503 l
+8 0 0 8 274 65.503 274 57.503 a
+582 57.503 l
+h
+</path>
+<path stroke="black">
+266 174 m
+582 57.503 l
+</path>
+</group>
+<group>
+<path stroke="black" fill="lightgray">
+86 62 m
+8 0 0 8 78 62 78 70 a
+42 70 l
+42 34 l
+8 0 0 8 50 34 50 26 a
+86 26 l
+h
+</path>
+<path stroke="black">
+42 70 m
+86 26 l
+</path>
+</group>
+<path stroke="black" fill="lightgray">
 469 369 m
 4 0 0 4 465 369 465 373 a
 159 373 l
@@ -314,5 +385,49 @@ h
 <text matrix="1 0 0 1 32 112" transformations="translations" pos="128 512" stroke="black" type="minipage" width="304" height="54.687" depth="49.81" valign="top">\blindtext</text>
 <text matrix="1 0 0 1 16 -16" transformations="translations" pos="128 512" stroke="black" type="minipage" width="304" height="54.687" depth="49.81" valign="top">\blindtext</text>
 <text matrix="1 0 0 1 32 -144" transformations="translations" pos="128 512" stroke="black" type="minipage" width="304" height="54.687" depth="49.81" valign="top">\blindtext</text>
+<text matrix="1 0 0 1 144 -344" transformations="translations" pos="128 512" stroke="black" type="minipage" width="304" height="54.687" depth="49.81" valign="top">\blindtext</text>
+<path matrix="1 0 0 1 -32 80" stroke="black">
+48 128 m
+48 96 l
+80 96 l
+80 128 l
+h
+</path>
+<path stroke="black">
+48 64 m
+48 32 l
+80 32 l
+80 64 l
+h
+</path>
+<path stroke="black">
+12 28 m
+12 26 l
+14 26 l
+14 28 l
+h
+</path>
+<group>
+<path matrix="1 0 0 1 10 50" stroke="black" fill="lightgray">
+10 2 m
+8 0 0 8 2 2 2 10 a
+-10 10 l
+-10 -2 l
+8 0 0 8 -2 -2 -2 -10 a
+10 -10 l
+h
+</path>
+<path matrix="1 0 0 1 10 50" stroke="black">
+-10 10 m
+10 -10 l
+</path>
+<path matrix="1 0 0 1 -6 34" stroke="black">
+12 20 m
+12 12 l
+20 12 l
+20 20 l
+h
+</path>
+</group>
 </page>
 </ipe>
