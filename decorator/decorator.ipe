@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE ipe SYSTEM "ipe.dtd">
 <ipe version="70005" creator="Ipe 7.1.4">
-<info created="D:20140303154143" modified="D:20140303165023"/>
+<info created="D:20140303154143" modified="D:20140303173800"/>
 <ipestyle name="basic">
 <symbol name="arrow/arc(spx)">
 <path stroke="sym-stroke" fill="sym-stroke" pen="sym-pen">
@@ -480,29 +480,38 @@ h
 </path>
 </group>
 </symbol>
+<symbol name="deco/KIT-box-margin-8-radius-8">
+<group>
+<path stroke="black" fill="gray">
+64 56 m
+8 0 0 8 56 56 56 64 a
+0 64 l
+0 8 l
+8 0 0 8 8 8 8 0 a
+64 0 l
+h
+</path>
+<path stroke="black">
+8 56 m
+8 8 l
+56 8 l
+56 56 l
+h
+</path>
+</group>
+</symbol>
 </ipestyle>
 <page>
 <layer name="alpha"/>
 <view layers="alpha" active="alpha"/>
 <group layer="alpha">
 <path stroke="black" fill="gray">
-216 230 m
-2 0 0 2 214 230 214 232 a
-186 232 l
-2 0 0 2 186 230 184 230 a
-184 186 l
-2 0 0 2 186 186 186 184 a
-214 184 l
-2 0 0 2 214 186 216 186 a
-h
-</path>
-</group>
-<group>
-<path stroke="black" fill="gray">
-190 226 m
-190 190 l
-210 190 l
-210 226 l
+184 232 m
+208 232 l
+8 0 0 -8 208 224 216 224 a
+216 184 l
+192 184 l
+8 0 0 -8 192 192 184 192 a
 h
 </path>
 </group>
@@ -666,24 +675,6 @@ h
 184 95 l
 </path>
 </group>
-<path stroke="black" fill="gray">
-64 62 m
-2 0 0 2 62 62 62 64 a
-2 64 l
-2 0 0 2 2 62 0 62 a
-0 2 l
-2 0 0 2 2 2 2 0 a
-62 0 l
-1.76777 0 0 1.76777 62.25 1.75 64 2 a
-h
-</path>
-<path stroke="black">
-8 56 m
-8 8 l
-56 8 l
-56 56 l
-h
-</path>
 <group matrix="1 0 0 1 85 -2">
 <path matrix="1 0 0 1 27 2" stroke="black" fill="gray">
 176 112 m
@@ -702,6 +693,24 @@ h
 <path matrix="1 0 0 1 27 3" stroke="black" fill="gray">
 168 95 m
 184 95 l
+</path>
+</group>
+<group>
+<path stroke="black" fill="gray">
+64 56 m
+8 0 0 8 56 56 56 64 a
+0 64 l
+0 8 l
+8 0 0 8 8 8 8 0 a
+64 0 l
+h
+</path>
+<path stroke="black">
+8 56 m
+8 8 l
+56 8 l
+56 56 l
+h
 </path>
 </group>
 </page>

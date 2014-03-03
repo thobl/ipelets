@@ -1,22 +1,272 @@
 <?xml version="1.0"?>
 <!DOCTYPE ipestyle SYSTEM "ipe.dtd">
 <ipestyle name="decorator">
-  <symbol name="deco/box-margin-8">
-    <group>
-      <path stroke="black" fill="white">
-	-16 16 m
-	-16 -16 l
-	16 -16 l
-	16 16 l
-	h
-      </path>
-      <path stroke="black">
-	-8 8 m
-	-8 -8 l
-	8 -8 l
-	8 8 l
-	h
-      </path>
-    </group>
-  </symbol>
+<symbol name="deco/box-margin-8">
+<group>
+<path stroke="black" fill="gray">
+0 64 m
+0 0 l
+64 0 l
+64 64 l
+h
+</path>
+<path stroke="black">
+8 56 m
+8 8 l
+56 8 l
+56 56 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/box-margin-4">
+<group>
+<path stroke="black" fill="gray">
+0 64 m
+0 0 l
+64 0 l
+64 64 l
+h
+</path>
+<path stroke="black">
+4 60 m
+4 4 l
+60 4 l
+60 60 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/box-margin-2">
+<group>
+<path stroke="black" fill="gray">
+0 64 m
+0 0 l
+64 0 l
+64 64 l
+h
+</path>
+<path stroke="black">
+2 62 m
+2 2 l
+62 2 l
+62 62 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/box-margin-1">
+<group>
+<path stroke="black" fill="gray">
+0 64 m
+0 0 l
+64 0 l
+64 64 l
+h
+</path>
+<path stroke="black">
+1 63 m
+1 1 l
+63 1 l
+63 63 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/rounded-box-margin-4-radius-4">
+<group>
+<path stroke="black" fill="gray">
+64 60 m
+4 0 0 4 60 60 60 64 a
+4 64 l
+4 0 0 4 4 60 0 60 a
+0 4 l
+4 0 0 4 4 4 4 0 a
+60 0 l
+4 0 0 4 60 4 64 4 a
+h
+</path>
+<path stroke="black">
+4 60 m
+4 4 l
+60 4 l
+60 60 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/rounded-box-margin-8-radius-4">
+<group>
+<path stroke="black" fill="gray">
+64 60 m
+4 0 0 4 60 60 60 64 a
+4 64 l
+4 0 0 4 4 60 0 60 a
+0 4 l
+4 0 0 4 4 4 4 0 a
+60 0 l
+4 0 0 4 60 4 64 4 a
+h
+</path>
+<path stroke="black">
+8 56 m
+8 8 l
+56 8 l
+56 56 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/rounded-box-margin-2-radius-4">
+<group>
+<path stroke="black" fill="gray">
+64 60 m
+4 0 0 4 60 60 60 64 a
+4 64 l
+4 0 0 4 4 60 0 60 a
+0 4 l
+4 0 0 4 4 4 4 0 a
+60 0 l
+4 0 0 4 60 4 64 4 a
+h
+</path>
+<path stroke="black">
+2 62 m
+2 2 l
+62 2 l
+62 62 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/rounded-box-margin-1-radius-4">
+<group>
+<path stroke="black" fill="gray">
+64 60 m
+4 0 0 4 60 60 60 64 a
+4 64 l
+4 0 0 4 4 60 0 60 a
+0 4 l
+4 0 0 4 4 4 4 0 a
+60 0 l
+4 0 0 4 60 4 64 4 a
+h
+</path>
+<path stroke="black">
+1 63 m
+1 1 l
+63 1 l
+63 63 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/rounded-box-margin-8-radius-2">
+<group>
+<path stroke="black" fill="gray">
+64 62 m
+2 0 0 2 62 62 62 64 a
+2 64 l
+2 0 0 2 2 62 0 62 a
+0 2 l
+2 0 0 2 2 2 2 0 a
+62 0 l
+2 0 0 2 62 2 64 2 a
+h
+</path>
+<path stroke="black">
+8 56 m
+8 8 l
+56 8 l
+56 56 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/rounded-box-margin-4-radius-2">
+<group>
+<path stroke="black" fill="gray">
+64 62 m
+2 0 0 2 62 62 62 64 a
+2 64 l
+2 0 0 2 2 62 0 62 a
+0 2 l
+2 0 0 2 2 2 2 0 a
+62 0 l
+2 0 0 2 62 2 64 2 a
+h
+</path>
+<path stroke="black">
+4 60 m
+4 4 l
+60 4 l
+60 60 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/rounded-box-margin-2-radius-2">
+<group>
+<path stroke="black" fill="gray">
+64 62 m
+2 0 0 2 62 62 62 64 a
+2 64 l
+2 0 0 2 2 62 0 62 a
+0 2 l
+2 0 0 2 2 2 2 0 a
+62 0 l
+2 0 0 2 62 2 64 2 a
+h
+</path>
+<path stroke="black">
+2 62 m
+2 2 l
+62 2 l
+62 62 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/rounded-box-margin-1-radius-2">
+<group>
+<path stroke="black" fill="gray">
+64 62 m
+2 0 0 2 62 62 62 64 a
+2 64 l
+2 0 0 2 2 62 0 62 a
+0 2 l
+2 0 0 2 2 2 2 0 a
+62 0 l
+2 0 0 2 62 2 64 2 a
+h
+</path>
+<path stroke="black">
+1 63 m
+1 1 l
+63 1 l
+63 63 l
+h
+</path>
+</group>
+</symbol>
+<symbol name="deco/KIT-box-margin-8-radius-8">
+<group>
+<path stroke="black" fill="gray">
+64 56 m
+8 0 0 8 56 56 56 64 a
+0 64 l
+0 8 l
+8 0 0 8 8 8 8 0 a
+64 0 l
+h
+</path>
+<path stroke="black">
+8 56 m
+8 8 l
+56 8 l
+56 56 l
+h
+</path>
+</group>
+</symbol>
 </ipestyle>
