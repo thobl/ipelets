@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE ipestyle SYSTEM "ipe.dtd">
+<ipestyle name="decorator">
+  <symbol name="deco/box-margin-8">
+    <group>
+      <path stroke="black" fill="white">
+	-16 16 m
+	-16 -16 l
+	16 -16 l
+	16 16 l
+	h
+      </path>
+      <path stroke="black">
+	-8 8 m
+	-8 -8 l
+	8 -8 l
+	8 8 l
+	h
+      </path>
+    </group>
+  </symbol>
+</ipestyle>

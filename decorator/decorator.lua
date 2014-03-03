@@ -93,9 +93,14 @@ end
 function run_fancy_decorator (model)
    local p = model:page()
    local prim = p:primarySelection()
+   if (not prim) then
+      report_problem(model, "You must select somethings.")
+      return
+   end
    local bbox_target = p:bbox(prim)
 
    local deco_obj_group = ask_for_decorator(model)
+   if (not deco_obj_group) then return end   
    if (deco_obj_group:type() ~= "group") then
       report_problem(model, "The decoration must be a group.")
       return
@@ -106,7 +111,11 @@ function run_fancy_decorator (model)
    local bbox_source = bbox(last_obj, p)
    local center = ipe.Vector(bbox_source:left() + 0.5 * bbox_source:width(),
 			     bbox_source:bottom() + 0.5 * bbox_source:height())
-   
+
+   if (#objects == 0) then
+      report_problem(model, "The decoration must be a group of at least two elements.")
+      return
+   end
    for i,deco_obj in ipairs(objects) do
       if (deco_obj:type() ~= "path") then
 	 report_problem(model, "Each decoration object needs to be a path.")
@@ -141,53 +150,6 @@ function ask_for_decorator(model)
    return symbol:clone()
 end
 
--- Decorate something given by its bounding box with a given deco
--- object, which needs to be a path.
-function decorate(model, bbox, deco)
-   if (deco:type() ~= "path") then
-      report_problem(model, "The decoration needs to be a path.")
-      return
-   end
-
-   local shape = deco:shape()
-   local m = deco:matrix()
-   for _,path in pairs(shape) do
-      for _,subpath in ipairs(path) do	 
-	 -- move all points
-	 for i,point in ipairs(subpath) do
-	    subpath[i] = translation(bbox, m*point) * m*point
-	 end
-
-	 -- for acs, the center must be translated separately
-	 if (subpath["type"] == "arc") then
-	    local arc = subpath["arc"]
-	    local arc_pos = arc:matrix():translation()
-	    subpath["arc"] = translation(bbox, m*arc_pos) * m * arc
-	 end
-      end
-   end
-   -- update model
-   deco:setShape(shape)
-   deco:setMatrix(ipe.Matrix())
-   model:creation("create", deco)
-end
-
--- The translation matrix that should be applied to a given point when
--- doing the decoration.
-function translation(bbox, point)
-   local dx = 0
-   local dy = 0
-   if (point.x > 0) then
-      dx = dx + bbox:width()
-   end
-   if (point.y > 0) then
-      dy = dy + bbox:height()
-   end
-   dx = dx + bbox:left()
-   dy = dy + bbox:bottom()
-   return ipe.Translation(dx, dy)
-end
-
 function mainWindow(model)
    if model.ui.win == nil then
       return model.ui
@@ -196,34 +158,7 @@ function mainWindow(model)
    end
 end
 
-function run_decorator(model)
-   -- get bbox of primary selection
-   local p = model:page()
-   local prim = p:primarySelection()
-   if not prim then
-      model.ui:explain("An object must be selected.")
-      return
-   end
-   local bbox = p:bbox(prim)
-
-   -- create decorator object
-   local dialog = ipeui.Dialog(mainWindow(model), "Select a decorator.")
-   local decorators = decorator_names(model)
-   dialog:add("deco", "combo", decorators, 1, 1, 1, 2)
-   dialog:add("ok", "button", { label="&Ok", action="accept" }, 2, 2)
-   dialog:add("cancel", "button", { label="&Cancel", action="reject" }, 2, 1)
-   local r = dialog:execute()
-   if not r then return end
-   local deco_name = decorators[dialog:get("deco")]
-   local symbol = model.doc:sheets():find("symbol", deco_name)
-   local deco = symbol:clone()
-
-   -- run the decoration
-   decorate(model, bbox, deco)
-end
-
 label = "Decorator"
 methods = {
-  { label = "Decorate", run=run_decorator},
   { label = "Fancy decorator", run=run_fancy_decorator},
 }
