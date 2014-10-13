@@ -114,6 +114,29 @@ function decorator_names(model)
    return res
 end
 
+-- Check whether a given deco object is usable.
+function check_decorator_object(model, deco_obj_group)
+   if (deco_obj_group:type() ~= "group") then
+      report_problem(model, "The decoration must be a group.")
+      return false
+   end
+
+   local objects = deco_obj_group:elements()
+   local last_obj = table.remove(objects, #objects)
+   if (#objects == 0) then
+      report_problem(model, "The decoration must be a group of at least two elements (the topmost element is a placeholder for the objects that are decorated, all other elements are the decoration).")
+      return false
+   end
+
+   for i,deco_obj in ipairs(objects) do
+      if (deco_obj:type() ~= "path") then
+	 report_problem(model, "Each decoration object needs to be a path.")
+	 return false
+      end
+   end
+   return true
+end
+
 -- Ask the user for a decorator and run the decoration.
 function run_decorator (model)
    local p = model:page()
@@ -122,15 +145,11 @@ function run_decorator (model)
       report_problem(model, "You must select somethings.")
       return
    end
-   -- local bbox_target = p:bbox(prim)
    local bbox_target = bbox_of_selected_objects(p)
 
    local deco_obj_group = ask_for_decorator(model)
-   if (not deco_obj_group) then return end   
-   if (deco_obj_group:type() ~= "group") then
-      report_problem(model, "The decoration must be a group.")
-      return
-   end
+   if (not deco_obj_group) then return end
+   if (not check_decorator_object(model, deco_obj_group)) then return end
 
    local objects = deco_obj_group:elements()
    local last_obj = table.remove(objects, #objects)
@@ -138,16 +157,7 @@ function run_decorator (model)
    local center = ipe.Vector(bbox_source:left() + 0.5 * bbox_source:width(),
 			     bbox_source:bottom() + 0.5 * bbox_source:height())
 
-   if (#objects == 0) then
-      report_problem(model, "The decoration must be a group of at least two elements.")
-      return
-   end
    for i,deco_obj in ipairs(objects) do
-      if (deco_obj:type() ~= "path") then
-	 report_problem(model, "Each decoration object needs to be a path.")
-	 return
-      end
-
       cleanup_matrix(deco_obj)
       local deco_shape = deco_obj:shape()
       
@@ -176,7 +186,65 @@ function ask_for_decorator(model)
    return symbol:clone()
 end
 
+-- Basically create symbol taken from "symbols.lua" with two minor
+-- changes.  First, the symbol is created only if the call to
+-- check_decorator_object is successful.  Second, the prefix "deco/"
+-- is added to the symbols name.
+function create_deco_obj(model, num)
+   local p = model:page()
+   local prim = p:primarySelection()
+   if not prim then model.ui:explain("no selection") return end
+   if not check_decorator_object(model, p[prim]) then
+      model.ui:explain("no selection")
+      return
+   end
+   local str = model:getString("Enter name of new symbol")
+   if not str or str:match("^%s*$") then return end
+   local name = "deco/" .. str:match("^%s*%S+%s*$")
+   local old = model.doc:sheets():find("symbol", name)
+   if old then
+      local r = ipeui.messageBox(mainWindow(model), "question",
+				 "Symbol '" .. name .. "' already exists",
+				 "Do you want to proceed?",
+				 "okcancel")
+      if r <= 0 then return end
+   end
+
+   if num == 2 then -- new stylesheet
+      local sheet = ipe.Sheet()
+      sheet:add("symbol", name, p[prim])
+      local t = { label = methods[num].label,
+		  sheet = sheet,
+      }
+      t.redo = function (t, doc)
+	 doc:sheets():insert(1, t.sheet:clone())
+      end
+      t.undo = function (t, doc)
+	 doc:sheets():remove(1)
+      end
+      model:register(t)
+   else  -- top stylesheet
+      local sheet = model.doc:sheets():sheet(1)
+      local t = { label = methods[num].label,
+		  original = sheet:clone(),
+		  final = sheet:clone(),
+      }
+      t.final:add("symbol", name, p[prim])
+      t.redo = function (t, doc)
+	 doc:sheets():remove(1)
+	 doc:sheets():insert(1, t.final:clone())
+      end
+      t.undo = function (t, doc)
+	 doc:sheets():remove(1)
+	 doc:sheets():insert(1, t.original:clone())
+      end
+      model:register(t)
+   end
+end
+
 label = "Decorator"
 methods = {
-  { label = "decorate", run=run_decorator},
+  { label = "decorate", run=run_decorator },
+  { label = "create deco-object (in new style sheet)", run=create_deco_obj },
+  { label = "create deco-object (in top style sheet)", run=create_deco_obj },
 }
