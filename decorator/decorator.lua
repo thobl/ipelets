@@ -1,15 +1,11 @@
 
--- return a table of names associated with decorator symbols
-function decorator_names(model)
-   local sheets = model.doc:sheets()
-   local symbols = sheets:allNames("symbol")
-   local res = {}
-   for _, name in pairs(symbols) do
-      if name:find("deco/") == 1 then
-	 res[#res + 1] = name
-      end
+-- Helper for compatibility with different ipe-versions.
+function mainWindow(model)
+   if model.ui.win == nil then
+      return model.ui
+   else
+      return model.ui:win()
    end
-   return res
 end
 
 -- Changes the transformation matrix of a path object to the identitiy
@@ -78,6 +74,9 @@ function resize_shape(shape, center, bbox_source, bbox_target)
    transform_shape(shape, matrix_func)
 end
 
+-- Bounding box of a given object that is not currently contained in
+-- the page.  If the object is already part of the page, simply use
+-- p:bbox(obj).
 function bbox(obj, page)
    local objno = #page + 1
    page:insert(objno, obj, nil, page:layers()[1])
@@ -86,18 +85,45 @@ function bbox(obj, page)
    return bbox
 end
 
+-- The bounding box of all selected objects.
+function bbox_of_selected_objects(page)
+   local bbox = page:bbox(page:primarySelection())
+   for obj = 1, #page, 1 do
+      if page:select(obj) then
+	 bbox:add(page:bbox(obj))
+      end
+   end
+   return bbox
+end
+
+-- Show a warning to the user.
 function report_problem(model, text)
    ipeui.messageBox(mainWindow(model), "warning", text, nil, nil)
 end
 
-function run_fancy_decorator (model)
+-- Return a table of names associated with decorator symbols.
+function decorator_names(model)
+   local sheets = model.doc:sheets()
+   local symbols = sheets:allNames("symbol")
+   local res = {}
+   for _, name in pairs(symbols) do
+      if name:find("deco/") == 1 then
+	 res[#res + 1] = name
+      end
+   end
+   return res
+end
+
+-- Ask the user for a decorator and run the decoration.
+function run_decorator (model)
    local p = model:page()
    local prim = p:primarySelection()
    if (not prim) then
       report_problem(model, "You must select somethings.")
       return
    end
-   local bbox_target = p:bbox(prim)
+   -- local bbox_target = p:bbox(prim)
+   local bbox_target = bbox_of_selected_objects(p)
 
    local deco_obj_group = ask_for_decorator(model)
    if (not deco_obj_group) then return end   
@@ -132,7 +158,7 @@ function run_fancy_decorator (model)
 
    local group = ipe.Group(objects)
 
-   model:creation("fancy decoration created", group)
+   model:creation("decoration created", group)
 end
 
 -- Asks the user for a decorator and returns the chosen decorator
@@ -150,15 +176,7 @@ function ask_for_decorator(model)
    return symbol:clone()
 end
 
-function mainWindow(model)
-   if model.ui.win == nil then
-      return model.ui
-   else
-      return model.ui:win()
-   end
-end
-
 label = "Decorator"
 methods = {
-  { label = "Fancy decorator", run=run_fancy_decorator},
+  { label = "decorate", run=run_decorator},
 }
