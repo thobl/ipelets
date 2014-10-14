@@ -1,272 +1,256 @@
 <?xml version="1.0"?>
 <!DOCTYPE ipestyle SYSTEM "ipe.dtd">
 <ipestyle name="decorator">
-<symbol name="deco/box-margin-8">
-<group>
-<path stroke="black" fill="gray">
-0 64 m
-0 0 l
-64 0 l
-64 64 l
-h
-</path>
-<path stroke="black">
-8 56 m
-8 8 l
-56 8 l
-56 56 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/box-margin-4">
-<group>
-<path stroke="black" fill="gray">
-0 64 m
-0 0 l
-64 0 l
-64 64 l
-h
-</path>
-<path stroke="black">
-4 60 m
-4 4 l
-60 4 l
-60 60 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/box-margin-2">
-<group>
-<path stroke="black" fill="gray">
-0 64 m
-0 0 l
-64 0 l
-64 64 l
-h
-</path>
-<path stroke="black">
-2 62 m
-2 2 l
-62 2 l
-62 62 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/box-margin-1">
-<group>
-<path stroke="black" fill="gray">
-0 64 m
-0 0 l
-64 0 l
-64 64 l
-h
-</path>
-<path stroke="black">
-1 63 m
-1 1 l
-63 1 l
-63 63 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/rounded-box-margin-4-radius-4">
-<group>
-<path stroke="black" fill="gray">
-64 60 m
-4 0 0 4 60 60 60 64 a
-4 64 l
-4 0 0 4 4 60 0 60 a
-0 4 l
-4 0 0 4 4 4 4 0 a
-60 0 l
-4 0 0 4 60 4 64 4 a
-h
-</path>
-<path stroke="black">
-4 60 m
-4 4 l
-60 4 l
-60 60 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/rounded-box-margin-8-radius-4">
-<group>
-<path stroke="black" fill="gray">
-64 60 m
-4 0 0 4 60 60 60 64 a
-4 64 l
-4 0 0 4 4 60 0 60 a
-0 4 l
-4 0 0 4 4 4 4 0 a
-60 0 l
-4 0 0 4 60 4 64 4 a
-h
-</path>
-<path stroke="black">
-8 56 m
-8 8 l
-56 8 l
-56 56 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/rounded-box-margin-2-radius-4">
-<group>
-<path stroke="black" fill="gray">
-64 60 m
-4 0 0 4 60 60 60 64 a
-4 64 l
-4 0 0 4 4 60 0 60 a
-0 4 l
-4 0 0 4 4 4 4 0 a
-60 0 l
-4 0 0 4 60 4 64 4 a
-h
-</path>
-<path stroke="black">
-2 62 m
-2 2 l
-62 2 l
-62 62 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/rounded-box-margin-1-radius-4">
-<group>
-<path stroke="black" fill="gray">
-64 60 m
-4 0 0 4 60 60 60 64 a
-4 64 l
-4 0 0 4 4 60 0 60 a
-0 4 l
-4 0 0 4 4 4 4 0 a
-60 0 l
-4 0 0 4 60 4 64 4 a
-h
-</path>
-<path stroke="black">
-1 63 m
-1 1 l
-63 1 l
-63 63 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/rounded-box-margin-8-radius-2">
-<group>
-<path stroke="black" fill="gray">
-64 62 m
-2 0 0 2 62 62 62 64 a
-2 64 l
-2 0 0 2 2 62 0 62 a
-0 2 l
-2 0 0 2 2 2 2 0 a
-62 0 l
-2 0 0 2 62 2 64 2 a
-h
-</path>
-<path stroke="black">
-8 56 m
-8 8 l
-56 8 l
-56 56 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/rounded-box-margin-4-radius-2">
-<group>
-<path stroke="black" fill="gray">
-64 62 m
-2 0 0 2 62 62 62 64 a
-2 64 l
-2 0 0 2 2 62 0 62 a
-0 2 l
-2 0 0 2 2 2 2 0 a
-62 0 l
-2 0 0 2 62 2 64 2 a
-h
-</path>
-<path stroke="black">
-4 60 m
-4 4 l
-60 4 l
-60 60 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/rounded-box-margin-2-radius-2">
-<group>
-<path stroke="black" fill="gray">
-64 62 m
-2 0 0 2 62 62 62 64 a
-2 64 l
-2 0 0 2 2 62 0 62 a
-0 2 l
-2 0 0 2 2 2 2 0 a
-62 0 l
-2 0 0 2 62 2 64 2 a
-h
-</path>
-<path stroke="black">
-2 62 m
-2 2 l
-62 2 l
-62 62 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/rounded-box-margin-1-radius-2">
-<group>
-<path stroke="black" fill="gray">
-64 62 m
-2 0 0 2 62 62 62 64 a
-2 64 l
-2 0 0 2 2 62 0 62 a
-0 2 l
-2 0 0 2 2 2 2 0 a
-62 0 l
-2 0 0 2 62 2 64 2 a
-h
-</path>
-<path stroke="black">
-1 63 m
-1 1 l
-63 1 l
-63 63 l
-h
-</path>
-</group>
-</symbol>
-<symbol name="deco/KIT-box-margin-8-radius-8">
-<group>
-<path stroke="black" fill="gray">
-64 56 m
-8 0 0 8 56 56 56 64 a
-0 64 l
-0 8 l
-8 0 0 8 8 8 8 0 a
-64 0 l
-h
-</path>
-<path stroke="black">
-8 56 m
-8 8 l
-56 8 l
-56 56 l
-h
-</path>
-</group>
-</symbol>
+  <symbol name="deco/simple-box-small">
+    <group>
+      <path stroke="black" fill="lightgray">
+	76 772 m
+	76 728 l
+	148 728 l
+	148 772 l
+	h
+      </path>
+      <path stroke="black">
+	80 768 m
+	80 732 l
+	144 732 l
+	144 768 l
+	h
+      </path>
+    </group>
+  </symbol>
+  <symbol name="deco/simple-box-large">
+    <group>
+      <path stroke="black" fill="lightgray">
+	72 776 m
+	72 724 l
+	152 724 l
+	152 776 l
+	h
+      </path>
+      <path stroke="black">
+	80 768 m
+	80 732 l
+	144 732 l
+	144 768 l
+	h
+      </path>
+    </group>
+  </symbol>
+  <symbol name="deco/rounded-box-small">
+    <group>
+      <path stroke="black" fill="lightgray">
+	80 772 m
+	4 0 0 4 80 768 76 768 a
+	76 732 l
+	4 0 0 4 80 732 80 728 a
+	144 728 l
+	4 0 0 4 144 732 148 732 a
+	148 768 l
+	4 0 0 4 144 768 144 772 a
+	h
+      </path>
+      <path stroke="black">
+	80 768 m
+	80 732 l
+	144 732 l
+	144 768 l
+	h
+      </path>
+    </group>
+  </symbol>
+  <symbol name="deco/rounded-box-large">
+    <group>
+      <path stroke="black" fill="lightgray">
+	76 776 m
+	4 0 0 4 76 772 72 772 a
+	72 728 l
+	4 0 0 4 76 728 76 724 a
+	148 724 l
+	4 0 0 4 148 728 152 728 a
+	152 772 l
+	4 0 0 4 148 772 148 776 a
+	h
+      </path>
+      <path stroke="black">
+	80 768 m
+	80 732 l
+	144 732 l
+	144 768 l
+	h
+      </path>
+    </group>
+  </symbol>
+  <symbol name="deco/special1">
+    <group>
+      <path matrix="0.5 0 0 0.5 36 388" stroke="black" fill="lightgray">
+	76 772 m
+	76 768 l
+	80 768 l
+	80 772 l
+	h
+      </path>
+      <path matrix="0.5 0 0 0.5 110 388" stroke="black" fill="lightgray">
+	76 772 m
+	76 768 l
+	80 768 l
+	80 772 l
+	h
+      </path>
+      <path matrix="0.5 0 0 0.5 110 342" stroke="black" fill="lightgray">
+	76 772 m
+	76 768 l
+	80 768 l
+	80 772 l
+	h
+      </path>
+      <path matrix="0.5 0 0 0.5 36 342" stroke="black" fill="lightgray">
+	76 772 m
+	76 768 l
+	80 768 l
+	80 772 l
+	h
+      </path>
+      <path stroke="black" fill="lightgray">
+	76 772 m
+	76 728 l
+	148 728 l
+	148 772 l
+	h
+      </path>
+      <path stroke="black">
+	80 768 m
+	80 732 l
+	144 732 l
+	144 768 l
+	h
+      </path>
+    </group>
+  </symbol>
+  <symbol name="deco/special2">
+    <group>
+      <path fill="lightgray">
+	76 772 m
+	76 732 l
+	148 732 l
+	148 772 l
+	h
+      </path>
+      <path matrix="0.5 0 0 0.5 38 386" stroke="black">
+	76 768 m
+	76 772 l
+	80 772 l
+      </path>
+      <path matrix="0.5 0 0 0.5 38 366" stroke="black">
+	76 736 m
+	76 732 l
+	80 732 l
+      </path>
+      <path matrix="0.5 0 0 0.5 74 366" stroke="black">
+	144 732 m
+	148 732 l
+	148 736 l
+      </path>
+      <path matrix="0.5 0 0 0.5 74 386" stroke="black">
+	148 768 m
+	148 772 l
+	144 772 l
+      </path>
+      <path stroke="black">
+	80 768 m
+	80 736 l
+	144 736 l
+	144 768 l
+	h
+      </path>
+    </group>
+  </symbol>
+  <symbol name="deco/special3">
+    <group>
+      <path stroke="black" fill="lightgray">
+	76 772 m
+	76 732 l
+	148 732 l
+	148 772 l
+	88 772 l
+	87 775
+	86 776
+	85 776
+	79 776
+	78 776
+	77 775
+	76 772 s
+	h
+      </path>
+      <path stroke="black">
+	80 768 m
+	80 736 l
+	144 736 l
+	144 768 l
+	h
+      </path>
+    </group>
+  </symbol>
+  <symbol name="deco/special4">
+    <group>
+      <path stroke="black" fill="lightgray">
+	78 774 m
+	76 772 l
+	76 732 l
+	148 732 l
+	150 734 l
+	150 774 l
+	h
+      </path>
+      <path stroke="black">
+	76 772 m
+	148 772 l
+	148 732 l
+      </path>
+      <path stroke="black">
+	148 772 m
+	150 774 l
+      </path>
+      <path stroke="black">
+	80 768 m
+	80 736 l
+	144 736 l
+	144 768 l
+	h
+      </path>
+    </group>
+  </symbol>
+  <symbol name="deco/comic">
+    <group>
+      <path matrix="0.5 0 0 0.5 128 370" stroke="black" fill="white">
+	240 720 m
+	232 720
+	212 720
+	212 740
+	212 756
+	212 776
+	232 776
+	280 776
+	300 776
+	300 756
+	300 740
+	300 720
+	280 720
+	256 720 s
+	252 712
+	232 704 s
+	240 712
+	240 720 s
+	h
+      </path>
+      <path matrix="0.25 0 0 0.25 -422 342" stroke="black">
+	2640 1648 m
+	2640 1568 l
+	2784 1568 l
+	2784 1648 l
+	h
+      </path>
+    </group>
+  </symbol>
 </ipestyle>
+
