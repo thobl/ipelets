@@ -50,23 +50,15 @@ function apply_recursively(page, obj_id, funct)
    end	    
 end
 
+----------------------------------------------------------------------
+-- scaling the usually unscalable ------------------------------------
 
 
-
--- Helper for compatibility with different ipe-versions.
-function mainWindow(model)
-   if model.ui.win == nil then
-      return model.ui
-   else
-      return model.ui:win()
-   end
-end
-
--- Show a warning to the user.
-function report_problem(model, text)
-   ipeui.messageBox(mainWindow(model), "warning", text, nil, nil)
-end
-
+-- Returns the property of an object like to the get() method.  If
+-- obj:get(property) returns a number, then this is returned.
+-- Otherwise, if it returns a symbolic value (like normal, large,
+-- ...), the corresponding numerical value is looked up (where kind is
+-- the symbol-type).
 function get_number(model, obj, property, kind)
    local res = obj:get(property)
    if (_G.type(res) == "number") then
@@ -77,10 +69,12 @@ function get_number(model, obj, property, kind)
    end
 end
 
+-- Scale the given property.
 function scale_property(model, obj, property, kind, factor)
    obj:set(property, get_number(model, obj, property, kind) * factor)
 end
 
+-- Scale symbol size, pen size and arrowsize.
 function scale_unscalable(model, obj, factor)
    if (obj:type() == "reference") then
       scale_property(model, obj, "symbolsize", "symbolsize", factor)
@@ -92,14 +86,14 @@ function scale_unscalable(model, obj, factor)
    end
 end
 
-function scale_test (model)
-   local p = model:page()
+-- Scale symbol size, pen size, and arrowsize of the selection.
+function scale_selection (model)
    local str = model:getString("Enter scale factor")
    if not str or str:match("^%s*$") or not str:match("^[%+%-%d%.]+$") then
       return
    end
    local factor = tonumber(str)
-    
+   local p = model:page()
    local t = { label = "scaling",
 	       pno = model.pno,
 	       vno = model.vno,
@@ -124,7 +118,7 @@ end
 
 
 
-label = "scale_test"
+label = "Scale"
 methods = {
-  { label = "scale_test", run=scale_test },
+  { label = "scale the unscalable", run=scale_selection },
 }
