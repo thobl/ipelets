@@ -22,7 +22,18 @@ STYLESHEET (CHANGING PREFERRED SETTINGS)
  Example style sheet to cascade with presentation.isy is as follows.
 
 ---- content of example.isy ---
-example removed, not possible to upload this file to the ipe-wiki otherwise
+<?xml version="1.0"?>
+<!DOCTYPE ipestyle SYSTEM "ipe.dtd">
+<ipestyle name="mine">
+<color name="tab_header" value="0 0 0.5"/>
+<color name="tab_body" value="0.827"/>
+<color name="box_fill" value="0.827"/>
+<color name="box_border" value="0 0 0"/>
+<pen name="boxborder" value="2.4"/>
+<preamble>
+\usepackage{amsmath}
+</preamble>
+</ipestyle>
 ---- end content of example.isy ---
 
  where:
