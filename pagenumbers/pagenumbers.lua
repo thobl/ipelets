@@ -162,7 +162,7 @@ function run()
 		    "information",
 		    "Nothing to do here.",
 		    [[Information on how to use this ipelet can be found in the Ipe Wiki.
- (http://lamut.informatik.uni-wuerzburg.de/mediawiki/ipe7/index.php/Pagenumbers_Ipelet)
+ (https://github.com/otfried/ipelets/tree/master/pagenumbers)
 ]],
 		    nil)
 end
