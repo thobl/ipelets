@@ -1,7 +1,7 @@
 
 label = "Offset"
 
-about = [[ Some stuff with paths. ]]
+about = [[ Draw a line parallel to a path. ]]
 
 function run(model)
    local str = getString(model, "Enter distance")
