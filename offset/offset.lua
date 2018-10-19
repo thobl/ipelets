@@ -25,11 +25,11 @@ function offset(model, dist)
    -- collect segments and build the curves, but do not add them to
    -- the model yet (this would confuse the loop)
    local curves = {}
-   print(#curves)
    for i, obj, sel, layer in p:objects() do
-      local segments = {}
       if sel and obj:type() == "path" then
 	 for _, subPath in ipairs(obj:shape()) do
+	    local segments = {}
+	    local closed = subPath["closed"]
 	    for _, seg in ipairs(subPath) do
 	       if (seg["type"] == "segment") then
 		  -- print("segment")
@@ -38,24 +38,28 @@ function offset(model, dist)
 		  table.insert(segments, {p1, p2})
 	       end
 	    end
+	    -- get the new curve
+	    curves[ #curves + 1 ] = offsetCurve(segments, dist, closed)
 	 end
-	 -- get the new curve
-	 curves[ #curves + 1 ] = offsetCurve(segments, dist)
       end
    end
    
    -- actually create paths with the collected curves
-   print(#curves)
    for _, curve in ipairs(curves) do
       local path = ipe.Path(model.attributes, { curve })
       model:creation("segment created", path)
    end
 end
 
-function offsetCurve(segments, dist)
+function offsetCurve(segments, dist, closed)
    -- Return a curve at distance dist from that path described by the
    -- list of points pairs in segments.
-
+   
+   -- add closing segment if curve is closed
+   if closed then
+      segments[#segments + 1] = {segments[#segments][2], segments[1][1]}
+   end
+   
    -- move the segments by dist into the direction of thair normal
    local originalPoint = {} -- i-th entry: endpoint of i-th segment
    for _, seg in ipairs(segments) do
@@ -67,9 +71,12 @@ function offsetCurve(segments, dist)
    end
 
    -- create a curve from the individual segments
-   local curve = { type="curve", closed=false }
+   local curve = { type="curve", closed=closed }
    for i, seg in ipairs(segments) do
       local next = segments[i+1]
+      if not next and closed then
+      	 next = segments[1]
+      end
       local intersection = nil
       if next then -- not the last segment
 	 -- check for intersection of two consecutive segments
@@ -82,8 +89,11 @@ function offsetCurve(segments, dist)
 	    next[1] = intersection
 	 end
       end
-      -- add the current segment to the path
-      curve[#curve + 1] = { type="segment", seg[1], seg[2] }
+      -- add the current segment to the path but skip the first
+      -- segment if the curve is closed
+      if not (closed and i == 1) then
+	 curve[#curve + 1] = { type="segment", seg[1], seg[2] }
+      end
       -- if the segments do not intersect, create an arc
       if next and not intersection then
 	 local m1 = nil
