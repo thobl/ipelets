@@ -52,9 +52,11 @@ function offset(model, dist, area)
 	       path = ipe.Path(model.attributes, { curve })
 	    end
 	    -- area for a closed path -> composition with the original
-	    -- path
+	    -- curve
 	    if area and closed then
-	       path = ipe.Path(model.attributes, { curve, subPath })
+	       local origCurve = { type="curve", closed=true }
+	       addToCurve(origCurve, segments)
+	       path = ipe.Path(model.attributes, { curve, origCurve })
 	    end
 	    -- area of open path -> concatenate original path with
 	    -- offset path
