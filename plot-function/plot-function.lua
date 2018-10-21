@@ -2,12 +2,52 @@ label = "Plot Function"
 
 about = [[ Very simple plotter for functions. ]]
 
-local funcStr = "x^2"
-local xMin = -3
-local xMax = 3
-local step = 0.2
-local yMin = 0
-local yMax = 9
+local funcStr = "sin(pi*x) * x^2"
+local xMin = -1
+local xMax = 1
+local step = 0.02
+local yMin = -1
+local yMax = 1
+
+local function loadCode(code, environment)
+   if _G.setfenv and _G.loadstring then
+      local f = assert(loadstring(code))
+      setfenv(f,environment)
+      return f
+   else
+      return assert(_G.load(code, nil,"t",environment))
+   end
+end
+
+local functionEvalContext = {}
+
+functionEvalContext.abs = math.abs
+functionEvalContext.acos = math.acos
+functionEvalContext.asin = math.asin
+functionEvalContext.atan = math.atan
+functionEvalContext.ceil = math.ceil
+functionEvalContext.cos = math.cos
+functionEvalContext.deg = math.deg
+functionEvalContext.exp = math.exp
+functionEvalContext.floor = math.floor
+functionEvalContext.modf = math.modf
+functionEvalContext.huge = math.huge
+functionEvalContext.log = math.log
+functionEvalContext.max = math.max
+functionEvalContext.maxinteger = math.maxinteger
+functionEvalContext.min = math.min
+functionEvalContext.mininteger = math.mininteger
+functionEvalContext.modf = math.modf
+functionEvalContext.pi = math.pi
+functionEvalContext.rad = math.rad
+functionEvalContext.random = math.random
+functionEvalContext.randomseed = math.randomseed
+functionEvalContext.sin = math.sin
+functionEvalContext.sqrt = math.sqrt
+functionEvalContext.tan = math.tan
+functionEvalContext.tointeger = math.tointeger
+functionEvalContext.type = math.type
+functionEvalContext.ult = math.ult
 
 function saveInput(d)
    funcStr = d:get("func")
@@ -60,8 +100,9 @@ function plot(model)
    local prim = p:primarySelection()
    if not prim then model.ui:explain("select a rectangle") return end
    local bbox = p:bbox(prim)
-
-   local func = _G.loadstring("return " .. funcStr)
+   
+   -- local func = _G.loadstring("return " .. funcStr)
+   local func = loadCode("return " .. funcStr, functionEvalContext)
   
    -- plot the function
    local path = { type="curve", closed=false }
@@ -92,7 +133,8 @@ function point (x, y, xMin, xMax, yMin, yMax, bbox)
 end
 
 function sestX (x)
-   assert(_G.loadstring("x = " .. x))()
+   --assert(_G.loadstring("x = " .. x))()
+   assert(loadCode("x = " .. x, functionEvalContext))()
 end
 
 function toNumber (str)
