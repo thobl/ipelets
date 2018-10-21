@@ -68,6 +68,15 @@ function loadInput(d)
 end
 
 function run(model)
+   local p = model:page()
+   local prim = p:primarySelection()
+   if not prim then
+      local details = "The bounding box of your selection will be used as bounding box of your plot: the values for x-min, x-max, y-min, and y-max will match the edges of your selection."
+      ipeui.messageBox(model.ui:win(), 
+		       "information", "Please select something", details, nil)
+      return 
+   end
+
    local d = ipeui.Dialog(model.ui:win(), "Plot a function")
    
    d:add("label7", "label", {label="Use Lua syntax for your function!"}, 1, 1, 1, 6)
@@ -98,7 +107,7 @@ end
 function plot(model)
    local p = model:page()
    local prim = p:primarySelection()
-   if not prim then model.ui:explain("select a rectangle") return end
+   -- if not prim then model.ui:explain("select a rectangle") return end
    local bbox = p:bbox(prim)
    
    -- local func = _G.loadstring("return " .. funcStr)
