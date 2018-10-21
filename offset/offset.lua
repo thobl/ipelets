@@ -3,45 +3,68 @@ label = "Offset"
 
 about = [[ Draw a line parallel to a path. ]]
 
-function run(model)
-   local str = getString(model, "Enter distance")
-   if not str or str:match("^%s*$)") then return end
-   local dist = tonumber(str)
-   offset(model, dist)
-end
-
-function getString(model, string)
-   if ipeui.getString ~= nil then
-      return ipeui.getString(model.ui, string)
-   else 
-      return model:getString(string)
+function run(model, num)
+   local dist = getInt(model, "Enter distance")
+   if num == 1 then 
+      offset(model, dist, false)
+   elseif num == 2 then
+      offset(model, dist, true)
    end
 end
 
-function offset(model, dist)
-   -- local area = true
-   -- call offsetPath for each selected path
-   p = model:page()
+function getInt(model, string)
+   local str
+   if ipeui.getString ~= nil then
+      str = ipeui.getString(model.ui, string)
+   else 
+      str = model:getString(string)
+   end
+   if not str or str:match("^%s*$)") then return 5 end
+   return tonumber(str)
+end
 
-   -- collect segments and build the curves, but do not add them to
-   -- the model yet (this would confuse the loop)
+-- For each selected path, create the offset path for the given
+-- distance.
+function offset(model, dist, area)
+   p = model:page()
+   -- collect segments and build the paths, but do not add them to the
+   -- model yet (this would confuse the loop)
    local paths = {}
    for i, obj, sel, layer in p:objects() do
       if sel and obj:type() == "path" then
 	 for _, subPath in ipairs(obj:shape()) do
+	    -- selected path found -> collect the segments
 	    local segments = {}
 	    local closed = subPath["closed"]
 	    for _, seg in ipairs(subPath) do
 	       if (seg["type"] == "segment") then
-		  -- print("segment")
 		  local p1 = obj:matrix() * seg[1]
 		  local p2 = obj:matrix() * seg[2]
 		  table.insert(segments, {p1, p2})
 	       end
 	    end
-	    -- get the new curve
+	    -- create the offset curve
 	    local curve = offsetCurve(segments, dist, closed)
-	    local path = ipe.Path(model.attributes, { curve })
+	    -- create the path
+	    local path = nil
+	    -- no area -> just add the path
+	    if not area then 
+	       path = ipe.Path(model.attributes, { curve })
+	    end
+	    -- area for a closed path -> composition with the original
+	    -- path
+	    if area and closed then
+	       path = ipe.Path(model.attributes, { curve, subPath })
+	    end
+	    -- area of open path -> concatenate original path with
+	    -- offset path
+	    if area and not closed then
+	       segments[#segments + 1] = {segments[#segments][2], curve[#curve][2]}
+	       reverseSegments(segments)
+	       addToCurve(curve, segments)
+	       curve["closed"] = true
+	       path = ipe.Path(model.attributes, { curve })
+	    end
 	    paths[ #paths + 1 ] = path
 	 end
       end
@@ -50,6 +73,29 @@ function offset(model, dist)
    -- actually create paths with the collected curves
    for _, path in ipairs(paths) do
       model:creation("segment created", path)
+   end
+end
+
+-- Add some segments to a given curve.
+function addToCurve(curve, segments)
+   for _, seg in ipairs(segments) do
+      curve[#curve + 1] = { type="segment", seg[1], seg[2] }
+   end
+end
+
+-- Reverses the order of a list of segments (and reverses each segment
+-- itself).
+function reverseSegments(segments)
+   local i, j = 1, #segments
+
+   while i < j do
+      segments[i], segments[j] = segments[j], segments[i]
+      i = i + 1
+      j = j - 1
+   end
+
+   for _, seg in ipairs(segments) do
+      seg[1], seg[2] = seg[2], seg[1]
    end
 end
 
@@ -151,9 +197,6 @@ function shortenToIntersection(seg1, seg2)
    return intersection
 end
 
-
-
-
 -- some debug output to figure out how arcs exactly work
 function test(model, num)
    p = model:page()
@@ -191,9 +234,10 @@ function test(model, num)
    end
 end
 
--- methods = {
---    { label = "offset", run=run },
---    { label = "test", run=test }
--- }
+methods = {
+   { label = "Offset path", run=run },
+   { label = "Offset area", run=run },
+   -- { label = "test", run=test }
+}
 
 ----------------------------------------------------------------------
