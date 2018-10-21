@@ -7,9 +7,9 @@ offset path and the original polyline/polygon.
 
 # Tips and Notes #
 
-	- If you select multiple polyliens/polygons, the offset path for each
-	of them is created.  The same holds for compositions of multiple
-	polylines/polygons.
-	- If you want an offset in the opposite direction, use negative
-	numbers.
-	- The behavior on curves is undefined.
+- If you select multiple polyliens/polygons, the offset path for each
+  of them is created.  The same holds for compositions of multiple
+  polylines/polygons.
+- If you want an offset in the opposite direction, use negative
+  numbers.
+- The behavior on curves is undefined.
