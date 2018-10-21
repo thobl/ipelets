@@ -19,12 +19,13 @@ function getString(model, string)
 end
 
 function offset(model, dist)
+   -- local area = true
    -- call offsetPath for each selected path
    p = model:page()
 
    -- collect segments and build the curves, but do not add them to
    -- the model yet (this would confuse the loop)
-   local curves = {}
+   local paths = {}
    for i, obj, sel, layer in p:objects() do
       if sel and obj:type() == "path" then
 	 for _, subPath in ipairs(obj:shape()) do
@@ -39,73 +40,46 @@ function offset(model, dist)
 	       end
 	    end
 	    -- get the new curve
-	    curves[ #curves + 1 ] = offsetCurve(segments, dist, closed)
+	    local curve = offsetCurve(segments, dist, closed)
+	    local path = ipe.Path(model.attributes, { curve })
+	    paths[ #paths + 1 ] = path
 	 end
       end
    end
    
    -- actually create paths with the collected curves
-   for _, curve in ipairs(curves) do
-      local path = ipe.Path(model.attributes, { curve })
+   for _, path in ipairs(paths) do
       model:creation("segment created", path)
    end
 end
 
-function offsetCurve(segments, dist, closed)
-   -- Return a curve at distance dist from that path described by the
-   -- list of points pairs in segments.
-   
+-- Return a curve at distance dist from that path described by the
+-- list of points pairs in segments.
+function offsetCurve(segs, dist, closed)
    -- add closing segment if curve is closed
    if closed then
-      segments[#segments + 1] = {segments[#segments][2], segments[1][1]}
+      segs[#segs + 1] = {segs[#segs][2], segs[1][1]}
    end
    
-   -- move the segments by dist into the direction of thair normal
-   local originalPoint = {} -- i-th entry: endpoint of i-th segment
-   for _, seg in ipairs(segments) do
-      originalPoint[#originalPoint + 1] = seg[2]
-      local vec = seg[2] - seg[1]
-      local norm = vec:orthogonal():normalized()
-      seg[1] = seg[1] + dist*norm
-      seg[2] = seg[2] + dist*norm
-   end
+   -- shift the segments
+   local newSegs = shiftedSegments(segs, dist)
 
-   -- create a curve from the individual segments
+   -- create the curve from the shifted segments
    local curve = { type="curve", closed=closed }
-   for i, seg in ipairs(segments) do
-      local next = segments[i+1]
-      if not next and closed then
-      	 next = segments[1]
-      end
-      local intersection = nil
-      if next then -- not the last segment
-	 -- check for intersection of two consecutive segments
-	 sCurr = ipe.Segment(seg[1], seg[2])
-	 sNext = ipe.Segment(next[1], next[2])
-	 intersection = sCurr:intersects(sNext)
-	 if intersection then 
-	    -- shorten segments to meet at their intersection
-	    seg[2] = intersection
-	    next[1] = intersection
-	 end
-      end
+   for i, seg in ipairs(newSegs) do
+      -- nicely join consecutive segments
+      local next = nextSegment(newSegs, i, closed)
+      local arc = joinSegments(seg, next, segs[i][2], dist)
+      
       -- add the current segment to the path but skip the first
       -- segment if the curve is closed
       if not (closed and i == 1) then
 	 curve[#curve + 1] = { type="segment", seg[1], seg[2] }
       end
-      -- if the segments do not intersect, create an arc
-      if next and not intersection then
-	 local m1 = nil
-	 if dist > 0 then
-	    m1 = ipe.Matrix(dist, 0, 0, -dist)
-	 else
-	    m1 = ipe.Matrix(dist, 0, 0, dist)
-	 end
-	 local m2 = ipe.Translation(originalPoint[i]) 
-	 local myArc = ipe.Arc(m2*m1, next[1], seg[2])
-	 -- add the arc to the path
-	 curve[#curve + 1] = { type="arc", arc=myArc, seg[2], next[1]}
+
+      -- create the connecting arc
+      if arc then
+	 curve[#curve + 1] = arc
       end
    end
    
@@ -113,8 +87,75 @@ function offsetCurve(segments, dist, closed)
    return curve
 end
 
+-- Return a new list of segments obtained by shifting each segment by
+-- dist along its normal.
+function shiftedSegments(segments, dist)
+   local result = {}
+   for i, seg in ipairs(segments) do
+      local vec = seg[2] - seg[1]
+      local norm = vec:orthogonal():normalized()
+      result[i] = {seg[1] + dist*norm, seg[2] + dist*norm}
+   end
+   return result
+end
+
+-- Return the next segment after i in a list of segments (modulo is
+-- closed is true).
+function nextSegment(segments, i, closed)
+   local next = segments[i+1]
+   if not next and closed then
+      next = segments[1]
+   end
+   return next
+end
+
+-- If seg1 and seg2 intersect, they are shortened such that the
+-- endpoint of seg1 coincides with the endpoint of seg2.  Otherwise,
+-- an arc (with given center and radius) joining the endpoint of seg1
+-- with the startpoint of seg2 is returned.  The sign of radius
+-- indicates whether the arc goes clockwise or counterclockwise.
+function joinSegments(seg1, seg2, center, radius)
+   -- return nil if one of the segments is nil
+   if not seg1 or not seg2 then return nil end
+   
+   -- shorten to intersection (and stop if there is one)
+   local intersection = shortenToIntersection(seg1, seg2)
+   if intersection then return nil end
+   
+   -- create the arc
+   local m1 = nil
+   if radius > 0 then
+      m1 = ipe.Matrix(radius, 0, 0, -radius)
+   else
+      m1 = ipe.Matrix(radius, 0, 0, radius)
+   end
+   local m2 = ipe.Translation(center)
+   local myArc = ipe.Arc(m2*m1, seg2[1], seg1[2])
+   return { type="arc", arc=myArc, seg1[2], seg2[1]}
+end
+
+-- Shorten the segments to their intersection (if exists) such that
+-- the endpoint of seg1 coincides with the startpoint of seg2.  The
+-- intersection is returned (nil if there is no intersection).
+function shortenToIntersection(seg1, seg2)
+   local intersection = nil
+   -- create ipe segments
+   seg1Ipe = ipe.Segment(seg1[1], seg1[2])
+   seg2Ipe = ipe.Segment(seg2[1], seg2[2])
+   intersection = seg1Ipe:intersects(seg2Ipe)
+   if intersection then 
+      -- shorten segments to meet at their intersection
+      seg1[2] = intersection
+      seg2[1] = intersection
+   end
+   return intersection
+end
+
+
+
+
+-- some debug output to figure out how arcs exactly work
 function test(model, num)
-   -- some debug output to figure out how arcs exactly work
    p = model:page()
    local write = _G.io.write
    local segments = {}
