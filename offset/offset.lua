@@ -3,8 +3,17 @@ label = "Offset"
 
 about = [[ Draw a line parallel to a path. ]]
 
+local roundCorners = true
+
+function toggleRoundCorners(model, num)
+   roundCorners = not roundCorners
+end
+
 function run(model, num)
    local dist = getInt(model, "Enter distance")
+   if dist == 0 then
+      return
+   end
    if num == 1 then 
       offset(model, dist, false)
    elseif num == 2 then
@@ -19,7 +28,7 @@ function getInt(model, string)
    else 
       str = model:getString(string)
    end
-   if not str or str:match("^%s*$)") then return 5 end
+   if not str or str:match("^%s*$)") then return 0 end
    return tonumber(str)
 end
 
@@ -165,6 +174,27 @@ end
 function joinSegments(seg1, seg2, center, radius)
    -- return nil if one of the segments is nil
    if not seg1 or not seg2 then return nil end
+
+   -- lengthen both segments if the tarnsition should be sharp
+   if not roundCorners then
+      local p1 = seg1[2]
+      local p2 = seg1[1]
+      local pDelta = p1 - p2
+      local pNorm = pDelta:normalized()
+      local newP1 =  p1 + pNorm * 500
+      seg1[2] = newP1
+
+      local q1 = seg2[1]
+      local q2 = seg2[2]
+      local qDelta = q1 - q2
+      local qNorm = qDelta:normalized()
+      local newQ1 =  q1 + qNorm * 500
+      print(q1)
+      print(q2)
+      print(seg2[1])
+      seg2[1] = newQ1
+      print(seg2[1])
+   end
    
    -- shorten to intersection (and stop if there is one)
    local intersection = shortenToIntersection(seg1, seg2)
@@ -239,6 +269,7 @@ end
 methods = {
    { label = "Offset path", run=run },
    { label = "Offset area", run=run },
+   { label = "Toggle round corners", run=toggleRoundCorners },
    -- { label = "test", run=test }
 }
 
