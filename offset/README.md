@@ -14,4 +14,7 @@ offset path and the original polyline/polygon.
   polylines/polygons.
 - If you want an offset in the opposite direction, use negative
   numbers.
+- With the option "Toggle round corners", you can turn the use of arcs
+  for concave corners off (and on again).  This is for example useful
+  for computing the straight skeleton.
 - The behavior on curves is undefined.
