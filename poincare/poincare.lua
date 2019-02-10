@@ -14,6 +14,8 @@ _G.MODEL.poincare_backup_startModeTool = _G.MODEL.startModeTool
 function _G.MODEL:startModeTool(modifiers)
    if self.mode:sub(1,13) == "poincare_line" then
       POINCARE_LINETOOL:new(self, self.mode)
+   elseif self.mode == "poincare_circle" then
+      POINCARE_CIRCLETOOL:new(self)
    else
       self:poincare_backup_startModeTool(modifiers)
    end
@@ -61,8 +63,19 @@ end
 ----------------------------------------------------------------------
 -- poincaré disk computations
 ----------------------------------------------------------------------
+function distance(v1, v2)
+   v1 = transform_to_unit_disk(v1)
+   v2 = transform_to_unit_disk(v2)
+   local res = 1 + 2 * (v1 - v2):sqLen() / ((1 - v1:sqLen()) * (1 - v2:sqLen()))
+   return math.log(res + math.sqrt(res^2 - 1))
+end
+
+function radius_hyperbolic_to_euclidean(radius)
+   return (math.exp(radius) - 1) / (math.exp(radius) + 1)
+end
+
 function transform_to_unit_disk(v)
-   if type(v) == number then
+   if type(v) == "number" then
       return v / poincare_disk.radius
    else
       return 1 / poincare_disk.radius * (v - poincare_disk.center)
@@ -70,7 +83,7 @@ function transform_to_unit_disk(v)
 end
 
 function transform_from_unit_disk(v)
-   if type(v) == number then
+   if type(v) == "number" then
       return  poincare_disk.radius * v
    else 
       return poincare_disk.radius * v + poincare_disk.center
@@ -98,56 +111,6 @@ function line_center(v1_in, v2_in)
    return transform_from_unit_disk(center)
 end
 
--- function poincare_segmentshape(v1, v2)
---    -- local inv_radius = 1 / poincare_disk.radius
---    -- v1 = inv_radius * (v1_inp - poincare_disk.center)
---    -- v2 = inv_radius * (v2_inp - poincare_disk.center)
-
---    -- local dinom = 2 * (v1.x * v2.y - v2.x * v1.y)
---    -- if dinom == 0 then
---    --    return { segmentshape (v1_inp, v2_inp) }
---    -- end
-
---    -- local x1 = -10
---    -- local y1 = (v2.x^2 + v2.y^2 + 1 - 2*v2.x * x1) / (2 * v2.y)
---    -- local x2 = 10
---    -- local y2 = (v2.x^2 + v2.y^2 + 1 - 2*v2.x * x2) / (2 * v2.y)
---    -- local A = poincare_disk.radius * ipe.Vector(x1, y1) + poincare_disk.center
---    -- local B = poincare_disk.radius * ipe.Vector(x2, y2) + poincare_disk.center
-
---    -- x1 = -10
---    -- y1 = (v1.x^2 + v1.y^2 + 1 - 2*v1.x * x1) / (2 * v1.y)
---    -- x2 = 10
---    -- y2 = (v1.x^2 + v1.y^2 + 1 - 2*v1.x * x2) / (2 * v1.y)
---    -- local C = poincare_disk.radius * ipe.Vector(x1, y1) + poincare_disk.center
---    -- local D = poincare_disk.radius * ipe.Vector(x2, y2) + poincare_disk.center
-
---    -- local center_x = (v1.x^2 * v2.y + v1.y^2 * v2.y + v2.y - v2.x^2 * v1.y - v2.y^2 * v1.y - v1.y) / dinom
---    -- local center_y = 0
---    -- if v1.y ~= 0 then
---    --    center_y = (v1.x^2 + v1.y^2 + 1 - 2 * v1.x * center_x)/(2 * v1.y);
---    -- else
---    --    center_y = (v2.x^2 + v2.y^2 + 1 - 2 * v2.x * center_x)/(2 * v2.y);
---    -- end
-
---    -- local center = ipe.Vector(center_x, center_y);
---    -- local radius = (v1 - center):len()
-
---    -- radius = poincare_disk.radius * radius
---    -- center = poincare_disk.radius * center + poincare_disk.center
-
---    local center = line_center(v1, v2)
---    local radius = (v1 - center):len()
-
---    if radius == math.huge then
---       return { segmentshape(v1, v2) }
---    else
---       return { circleshape(center, radius) }
---    end
-   
---    -- return { segmentshape(A, B), segmentshape(C, D), segmentshape(v1_inp, center), segmentshape(v2_inp, center), circleshape(center, radius) }
--- end
-
 ----------------------------------------------------------------------
 -- the drawing tools
 ----------------------------------------------------------------------
@@ -168,8 +131,6 @@ function POINCARE_LINETOOL:new(model, mode)
 end
 
 function POINCARE_LINETOOL:compute()
-   -- self.shape = poincare_segmentshape(self.v[1], self.v[2])
-   
    local v1 = self.v[1]
    local v2 = self.v[2]
 
@@ -247,6 +208,80 @@ function POINCARE_LINETOOL:key(text, modifiers)
   end
 end
 
+----------------------------------------------------------------------
+
+POINCARE_CIRCLETOOL = {}
+POINCARE_CIRCLETOOL.__index = POINCARE_CIRCLETOOL
+
+function POINCARE_CIRCLETOOL:new(model)
+  local tool = {}
+  setmetatable(tool, POINCARE_CIRCLETOOL)
+  tool.model = model
+  local v = model.ui:pos()
+  tool.v = { v, v }
+  tool.cur = 2
+  model.ui:shapeTool(tool)
+  tool.setColor(1.0, 0, 0)
+  return tool
+end
+
+function POINCARE_CIRCLETOOL:compute()
+   local radius_h = distance(self.v[1], self.v[2])
+   self.model.ui:explain("hyperbolic radius: " .. tostring(radius_h), 0)
+   
+   if radius_h == 0 then
+      self.shape = circleshape(self.v[1], 0)
+      return
+   end
+   
+   local center_dist_h = distance(poincare_disk.center, self.v[1])
+   local boundary1_dist_h = center_dist_h - radius_h
+   local boundary2_dist_h = center_dist_h + radius_h
+
+   local boundary1_dist_e = radius_hyperbolic_to_euclidean(boundary1_dist_h)
+   local boundary2_dist_e = radius_hyperbolic_to_euclidean(boundary2_dist_h)
+   local center_dist_e = (boundary1_dist_e + boundary2_dist_e) / 2
+   local radius_e = center_dist_e - boundary1_dist_e
+
+   local center = transform_to_unit_disk(self.v[1])
+   center = center_dist_e / center:len() * center
+
+
+   self.shape = circleshape(transform_from_unit_disk(center), transform_from_unit_disk(radius_e))
+end
+
+function POINCARE_CIRCLETOOL:mouseButton(button, modifiers, press)
+  if not press then return end
+  local v = self.model.ui:pos()
+  -- refuse point identical to previous
+  if v == self.v[self.cur - 1] then return end
+  self.v[self.cur] = v
+  self:compute()
+  if self.cur == 2 then
+    self.model.ui:finishTool()
+    local obj = ipe.Path(self.model.attributes, { self.shape })
+    self.model:creation("create circle", obj)
+  else
+    self.cur = self.cur + 1
+    self.model.ui:update(false)
+  end
+end
+
+function POINCARE_CIRCLETOOL:mouseMove()
+  self.v[self.cur] = self.model.ui:pos()
+  self:compute()
+  self.setShape({ self.shape })
+  self.model.ui:update(false) -- update tool
+end
+
+function POINCARE_CIRCLETOOL:key(text, modifiers)
+  if text == "\027" then
+    self.model.ui:finishTool()
+    return true
+  else
+    return false
+  end
+end
 
 
 function poincare_line_mode (model, num)
@@ -254,6 +289,8 @@ function poincare_line_mode (model, num)
       model.mode = "poincare_line"
    elseif num == 2 then
       model.mode = "poincare_line_segment"
+   elseif num == 3 then
+      model.mode = "poincare_circle"
    end
       
 end
@@ -261,4 +298,9 @@ end
 methods = {
    { label = "line tool", run=poincare_line_mode},
    { label = "line segment tool", run=poincare_line_mode},
+   { label = "circle", run=poincare_line_mode},
 }
+
+shortcuts.ipelet_1_poincare = "H,Shift+P"
+shortcuts.ipelet_2_poincare = "H,P"
+shortcuts.ipelet_3_poincare = "H,O"
