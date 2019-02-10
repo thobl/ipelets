@@ -24,6 +24,32 @@ end
 setmetatable = _G.setmetatable
 type = _G.type
 
+----------------------------------------------------------------------
+-- basic shapes from goodies.lua
+----------------------------------------------------------------------
+function checkPrimaryIsCircle(model, arc_ok)
+  local p = model:page()
+  local prim = p:primarySelection()
+  if not prim then model.ui:explain("no selection") return end
+  local obj = p[prim]
+  if obj:type() == "path" then
+    local shape = obj:shape()
+    if #shape == 1 then
+      local s = shape[1]
+      if s.type == "ellipse" then
+	return prim, obj, s[1]:translation(), shape
+      end
+      if arc_ok and s.type == "curve" and #s == 1 and s[1].type == "arc" then
+	return prim, obj, s[1].arc:matrix():translation(), shape
+      end
+    end
+  end
+  if arc_ok then
+    model:warning("Primary selection is not an arc, a circle, or an ellipse")
+  else
+    model:warning("Primary selection is not a circle or an ellipse")
+  end
+end
 
 ----------------------------------------------------------------------
 -- basic shapes from tools.lua
@@ -58,6 +84,15 @@ end
 ----------------------------------------------------------------------
 function arc(center, radius)
    return ipe.Arc(ipe.Matrix(radius, 0, 0, radius, center.x, center.y))
+end
+
+function circle_intersection(c1, r1, c2, r2)
+   local R = (c1 - c2):sqLen()
+   local tmp1 = 0.5 * (c1 + c2)
+   tmp1 = tmp1 + (r1^2 - r2^2)/(2 * R) * (c2 - c1)
+   local tmp2 = 0.5 * math.sqrt(2 * (r1^2 + r2^2)/R - (r1^2 - r2^2)^2/(R^2) - 1)
+   tmp2 = tmp2 * ipe.Vector(c2.y - c1.y, c1.x - c2.x)
+   return tmp1 + tmp2, tmp1 - tmp2
 end
 
 ----------------------------------------------------------------------
@@ -153,13 +188,8 @@ function POINCARE_LINETOOL:compute()
       self.shape = { segmentshape(v1, v2) }
    else
       if self.mode == "poincare_line" then
-	 local c1 = arc(center, radius)
-	 local c2 = arc(poincare_disk.center, poincare_disk.radius)
-      	 local intersection = c1:intersect(c2)
-      	 v1 = intersection[1]
-      	 v2 = intersection[2]
+	 v1, v2 = circle_intersection(center, radius, poincare_disk.center, poincare_disk.radius)
       end
-      
       local r1 = v1 - center
       local r2 = v2 - center
       
@@ -305,22 +335,37 @@ end
 
 
 function poincare_line_mode(model, num)
-   if num == 1 then
+   if num == 2 then
       model.mode = "poincare_line"
-   elseif num == 2 then
-      model.mode = "poincare_line_segment"
+      model.ui:explain("Poincaré tool: line through two points")
    elseif num == 3 then
-      model.mode = "poincare_circle1"
+      model.mode = "poincare_line_segment"
+      model.ui:explain("Poincaré tool: line segment between two points")
    elseif num == 4 then
-      model.mode = "poincare_circle2"
+      model.mode = "poincare_circle1"
+      model.ui:explain("Poincaré tool: cirle (center = first point, radius = distance between center and second point)")
    elseif num == 5 then
+      model.mode = "poincare_circle2"
+      model.ui:explain("Poincaré tool: cirle (center = first point, radius = distance between second and third point)")
+   elseif num == 6 then
       model.mode = "poincare_circle3"
+      model.ui:explain("Poincaré tool: cirle (radius = distance between first and second point, center = thrid point)")
    end
       
 end
 
 function set_disk(model, num)
-   
+   -- poincare_disk = { radius = 64, center = ipe.Vector(64, 64) }
+   local prim, obj, pos, shape = checkPrimaryIsCircle(model, false)
+   _G.transformShape(obj:matrix(), shape)
+   local m = shape[1][1]
+   local center = m:translation()
+   local v = m * ipe.Vector(1,0)
+   local radius = (v - center):len()
+   poincare_disk.radius = radius
+   poincare_disk.center = center
+   model.ui:explain("Set center and radius of the Poincaré disc to: center = "
+		    .. tostring(center) .. " | radius = " .. tostring(radius), 0)
 end
 
 methods = {
@@ -332,6 +377,7 @@ methods = {
    { label = "circle (by radius + center)", run=poincare_line_mode},
 }
 
+shortcuts.ipelet_1_poincare = "H,D"
 shortcuts.ipelet_2_poincare = "H,Shift+P"
 shortcuts.ipelet_3_poincare = "H,P"
 shortcuts.ipelet_4_poincare = "H,O"
