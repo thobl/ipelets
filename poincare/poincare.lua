@@ -86,7 +86,20 @@ function arc(center, radius)
    return ipe.Arc(ipe.Matrix(radius, 0, 0, radius, center.x, center.y))
 end
 
-function circle_intersection(c1, r1, c2, r2)
+function arcshape_by_endpoints(center, radius, v1, v2)
+   local r1 = v1 - center
+   local r2 = v2 - center
+   local alpha = r1:angle()
+   local beta = r2:angle()
+   if ((beta - alpha >= 0) and (beta - alpha < math.pi) or
+       (beta - alpha <= 0) and (alpha - beta > math.pi)) then
+      return arcshape(center, radius, alpha, beta)
+   else
+      return rarcshape(center, radius, alpha, beta)
+   end
+end
+
+function circle_intersect(c1, r1, c2, r2)
    local R = (c1 - c2):sqLen()
    local tmp1 = 0.5 * (c1 + c2)
    tmp1 = tmp1 + (r1^2 - r2^2)/(2 * R) * (c2 - c1)
@@ -128,13 +141,14 @@ end
 function line_center(v1_in, v2_in)
    local v1 = transform_to_unit_disk(v1_in)
    local v2 = transform_to_unit_disk(v2_in)
-   
+
    local denominator = 2 * (v1.x * v2.y - v2.x * v1.y)
    if denominator == 0 then
       return ipe.Vector(math.huge, math.huge)
    end
 
-   local center_x = (v1.x^2 * v2.y + v1.y^2 * v2.y + v2.y - v2.x^2 * v1.y - v2.y^2 * v1.y - v1.y) / denominator
+   local center_x = (v1.x^2 * v2.y + v1.y^2 * v2.y + v2.y - 
+		     v2.x^2 * v1.y - v2.y^2 * v1.y - v1.y) / denominator
    local center_y = 0
    if math.abs(v1.y) > math.abs(v2.y) then
       center_y = (v1.x^2 + v1.y^2 + 1 - 2 * v1.x * center_x)/(2 * v1.y);
@@ -142,8 +156,54 @@ function line_center(v1_in, v2_in)
       center_y = (v2.x^2 + v2.y^2 + 1 - 2 * v2.x * center_x)/(2 * v2.y);
    end
    local center = ipe.Vector(center_x, center_y);
-
    return transform_from_unit_disk(center)
+end
+
+function poincare_line(v1, v2)
+   local v1 = transform_to_unit_disk(v1)
+   local v2 = transform_to_unit_disk(v2)
+
+   local center = ipe.Vector()
+   local denominator = 2 * (v1.x * v2.y - v2.x * v1.y)
+   if denominator == 0 then
+      center = ipe.Vector(math.huge, math.huge)
+   else 
+      local center_x = (v1.x^2 * v2.y + v1.y^2 * v2.y + v2.y - 
+			v2.x^2 * v1.y - v2.y^2 * v1.y - v1.y) / denominator
+      local center_y = 0
+      if math.abs(v1.y) > math.abs(v2.y) then
+	 center_y = (v1.x^2 + v1.y^2 + 1 - 2 * v1.x * center_x)/(2 * v1.y);
+      else
+	 center_y = (v2.x^2 + v2.y^2 + 1 - 2 * v2.x * center_x)/(2 * v2.y);
+      end
+      center = ipe.Vector(center_x, center_y);
+   end
+
+   local radius = (v1 - center):len()
+
+   local ideal_point1 = ipe.Vector()
+   local ideal_point2 = ipe.Vector()
+   if radius == math.huge then
+      if v1:len() == 0 then v1 = v2 end
+      ideal_point1 = v1:normalized()
+      ideal_point2 = -ideal_point1
+   else
+      ideal_point1, ideal_point2 =
+	 circle_intersect(center, radius, ipe.Vector(0, 0), 1)
+   end
+
+   center = transform_from_unit_disk(center)
+   radius = transform_from_unit_disk(radius)
+   ideal_point1 = transform_from_unit_disk(ideal_point1)
+   ideal_point2 = transform_from_unit_disk(ideal_point2)
+
+   return center, radius, ideal_point1, ideal_point2
+end
+
+function line_through_origin_ideal_points(v)
+   local v1 = transform_to_unit_disk(v):normalized()
+   local v2 = -v1
+   return transform_from_unit_disk(v1), transform_from_unit_disk(v2)
 end
 
 -- compute the center of the circle representing the line through
@@ -205,60 +265,66 @@ function POINCARE_LINETOOL:compute()
 
    self.model.ui:explain("hyperbolic length: " .. tostring(distance(v1, v2)), 0)
 
-   local center = line_center(v1, v2)
-   local radius = (v1 - center):len()
+   -- local center = line_center(v1, v2)
+   -- local radius = (v1 - center):len()
+
+   local center, radius, ideal_point1, ideal_point2 = poincare_line(v1, v2)
 
    if radius == math.huge then
       if self.mode == "poincare_line" then
-	 v1 = transform_to_unit_disk(v1)
-	 if v1:len() == 0 then
-	    v1 = transform_to_unit_disk(v2)
-	 end
+	 self.shape = { segmentshape(ideal_point1, ideal_point2) }
+	 -- v1 = transform_to_unit_disk(v1)
+	 -- if v1:len() == 0 then
+	 --    v1 = transform_to_unit_disk(v2)
+	 -- end
 
-	 v1 = v1:normalized(v1)
-	 v2 = -1*v1
+	 -- v1 = v1:normalized(v1)
+	 -- v2 = -1*v1
 
-	 v1 = transform_from_unit_disk(v1)
-	 v2 = transform_from_unit_disk(v2)
+	 -- v1 = transform_from_unit_disk(v1)
+	 -- v2 = transform_from_unit_disk(v2)
+      else
+	 self.shape = { segmentshape(v1, v2) }
       end
-      self.shape = { segmentshape(v1, v2) }
    else
       if self.mode == "poincare_line" then
-	 v1, v2 = circle_intersection(center, radius, poincare_disk.center, poincare_disk.radius)
-      end
-      local r1 = v1 - center
-      local r2 = v2 - center
-      
-      local alpha = r1:angle()
-      local beta = r2:angle()
-
-      if ((beta - alpha >= 0) and (beta - alpha < math.pi) or
-	  (beta - alpha <= 0) and (alpha - beta > math.pi)) then
-	 self.shape = { arcshape(center, radius, alpha, beta) }
+	 -- v1, v2 = circle_intersect(center, radius, poincare_disk.center, poincare_disk.radius)
+	 self.shape = { arcshape_by_endpoints(center, radius, ideal_point1, ideal_point2) }
       else
-	 self.shape = { rarcshape(center, radius, alpha, beta) }
+	 -- local r1 = v1 - center
+	 -- local r2 = v2 - center
+	 
+	 -- local alpha = r1:angle()
+	 -- local beta = r2:angle()
+
+	 -- if ((beta - alpha >= 0) and (beta - alpha < math.pi) or
+	 -- 	  (beta - alpha <= 0) and (alpha - beta > math.pi)) then
+	 -- 	 self.shape = { arcshape(center, radius, alpha, beta) }
+	 -- else
+	 -- 	 self.shape = { rarcshape(center, radius, alpha, beta) }
+	 -- end
+	 self.shape = { arcshape_by_endpoints(center, radius, v1, v2) }
       end
    end
 
    if self.mode == "poincare_line_right_angle" and v2 ~= poincare_disk.center then
       local perp_center = perpendicular_line_center(v1, v2)
       local perp_radius = (perp_center - v2):len()
-      v1, v2 = circle_intersection(perp_center, perp_radius, poincare_disk.center, poincare_disk.radius)
-      -- todo: make a function for this
-      local r1 = v1 - perp_center
-      local r2 = v2 - perp_center
+      v1, v2 = circle_intersect(perp_center, perp_radius, poincare_disk.center, poincare_disk.radius)
+      self.shape[2] = arcshape_by_endpoints(perp_center, perp_radius, v1, v2)
+      -- -- todo: make a function for this
+      -- local r1 = v1 - perp_center
+      -- local r2 = v2 - perp_center
       
-      local alpha = r1:angle()
-      local beta = r2:angle()
+      -- local alpha = r1:angle()
+      -- local beta = r2:angle()
 
-      if ((beta - alpha >= 0) and (beta - alpha < math.pi) or
-	  (beta - alpha <= 0) and (alpha - beta > math.pi)) then
-	 self.shape[2] = arcshape(perp_center, perp_radius, alpha, beta) 
-      else
-	 self.shape[2] = rarcshape(perp_center, perp_radius, alpha, beta) 
-      end
-      
-      -- self.shape[2] = circleshape(perp_center, perp_radius)
+      -- if ((beta - alpha >= 0) and (beta - alpha < math.pi) or
+      -- 	  (beta - alpha <= 0) and (alpha - beta > math.pi)) then
+      -- 	 self.shape[2] = arcshape(perp_center, perp_radius, alpha, beta) 
+      -- else
+      -- 	 self.shape[2] = rarcshape(perp_center, perp_radius, alpha, beta) 
+      -- end
    end
 end
 
