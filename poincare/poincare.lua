@@ -129,12 +129,12 @@ function line_center(v1_in, v2_in)
    local v1 = transform_to_unit_disk(v1_in)
    local v2 = transform_to_unit_disk(v2_in)
    
-   local dinominator = 2 * (v1.x * v2.y - v2.x * v1.y)
-   if dinominator == 0 then
+   local denominator = 2 * (v1.x * v2.y - v2.x * v1.y)
+   if denominator == 0 then
       return ipe.Vector(math.huge, math.huge)
    end
 
-   local center_x = (v1.x^2 * v2.y + v1.y^2 * v2.y + v2.y - v2.x^2 * v1.y - v2.y^2 * v1.y - v1.y) / dinominator
+   local center_x = (v1.x^2 * v2.y + v1.y^2 * v2.y + v2.y - v2.x^2 * v1.y - v2.y^2 * v1.y - v1.y) / denominator
    local center_y = 0
    if math.abs(v1.y) > math.abs(v2.y) then
       center_y = (v1.x^2 + v1.y^2 + 1 - 2 * v1.x * center_x)/(2 * v1.y);
@@ -168,6 +168,8 @@ end
 function POINCARE_LINETOOL:compute()
    local v1 = self.v[1]
    local v2 = self.v[2]
+
+   self.model.ui:explain("hyperbolic length: " .. tostring(distance(v1, v2)), 0)
 
    local center = line_center(v1, v2)
    local radius = (v1 - center):len()
