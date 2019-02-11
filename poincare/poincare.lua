@@ -297,7 +297,9 @@ function POINCARE_CIRCLETOOL:compute()
    local radius_e = center_dist_e - boundary1_dist_e
 
    local center_e = transform_to_unit_disk(center)
-   center_e = center_dist_e / center_e:len() * center_e
+   if center_e:len() ~= 0 then
+      center_e = center_dist_e / center_e:len() * center_e
+   end
 
    self.shape = circleshape(transform_from_unit_disk(center_e), transform_from_unit_disk(radius_e))
 end
