@@ -151,21 +151,33 @@ end
 function perpendicular_line_center(v1_in, v2_in)
    -- p is a point on the line
    local p = transform_to_unit_disk(v2_in)
+   
+   local v1 = transform_to_unit_disk(v1_in)
+   if (v1 .. p)^2 == v1:sqLen() * p:sqLen() then
+      -- special case for line through the center..
+      local center_y = (p.y + p.x^2 * p.y + p.y^3) / (2 * p.x^2 + 2 * p.y^2)
+      local center_x = p.x / p.y * center_y
+      if center_y == 0 then
+	 center_x = (p.x^2 + p.y^2 - 2 * p.y * center_y + 1) / (2 * p.x)
+      end
+      local center = ipe.Vector(center_x, center_y)
+      return transform_from_unit_disk(center)
+   else 
+      -- c is the center of the line through v1 and v2, r_sq is its
+      -- squared radius
+      local c = transform_to_unit_disk(line_center(v1_in, v2_in))
+      local r_sq = (c - p):sqLen()
 
-   -- c is the center of the line through v1 and v2, r_sq is its
-   -- squared radius
-   local c = transform_to_unit_disk(line_center(v1_in, v2_in))
-   local r_sq = (c - p):sqLen()
+      -- local center_y = (a^2*u - a*u^2 + b^2*u - a*v^2 + u - R^2*u - a) / (2*b*u - 2*a*v)
+      local center_y = (c.x^2*p.x - c.x*p.x^2 + c.y^2*p.x - c.x*p.y^2 + p.x - r_sq*p.x - c.x) / (2*c.y*p.x - 2*c.x*p.y)
+      local center_x = (p.x^2 + p.y^2 - 2 * p.y * center_y + 1) / (2 * p.x)
+      if p.x == 0 then
+	 center_x = (c.x^2 + c.y^2 - 2 * c.y * center_y - r_sq + 1) / (2 * c.x)
+      end
 
-   -- local center_y = (a^2*u - a*u^2 + b^2*u - a*v^2 + u - R^2*u - a) / (2*b*u - 2*a*v)
-   local center_y = (c.x^2*p.x - c.x*p.x^2 + c.y^2*p.x - c.x*p.y^2 + p.x - r_sq*p.x - c.x) / (2*c.y*p.x - 2*c.x*p.y)
-   local center_x = (p.x^2 + p.y^2 - 2 * p.y * center_y + 1) / (2 * p.x)
-   if p.x == 0 then
-      center_x = (c.x^2 + c.y^2 - 2 * c.y * center_y - r_sq + 1) / (2 * c.x)
+      local center = ipe.Vector(center_x, center_y)
+      return transform_from_unit_disk(center)
    end
-
-   local center = ipe.Vector(center_x, center_y)
-   return transform_from_unit_disk(center)
 end
 
 ----------------------------------------------------------------------
@@ -226,27 +238,27 @@ function POINCARE_LINETOOL:compute()
       else
 	 self.shape = { rarcshape(center, radius, alpha, beta) }
       end
+   end
 
-      if self.mode == "poincare_line_right_angle" then
-	 local perp_center = perpendicular_line_center(v1, v2)
-	 local perp_radius = (perp_center - v2):len()
-	 v1, v2 = circle_intersection(perp_center, perp_radius, poincare_disk.center, poincare_disk.radius)
-	 -- todo: make a function for this
-	 local r1 = v1 - perp_center
-	 local r2 = v2 - perp_center
-	 
-	 local alpha = r1:angle()
-	 local beta = r2:angle()
+   if self.mode == "poincare_line_right_angle" and v2 ~= poincare_disk.center then
+      local perp_center = perpendicular_line_center(v1, v2)
+      local perp_radius = (perp_center - v2):len()
+      v1, v2 = circle_intersection(perp_center, perp_radius, poincare_disk.center, poincare_disk.radius)
+      -- todo: make a function for this
+      local r1 = v1 - perp_center
+      local r2 = v2 - perp_center
+      
+      local alpha = r1:angle()
+      local beta = r2:angle()
 
-	 if ((beta - alpha >= 0) and (beta - alpha < math.pi) or
-	     (beta - alpha <= 0) and (alpha - beta > math.pi)) then
-	    self.shape[2] = arcshape(perp_center, perp_radius, alpha, beta) 
-	 else
-	    self.shape[2] = rarcshape(perp_center, perp_radius, alpha, beta) 
-	 end
-	 
-	 -- self.shape[2] = circleshape(perp_center, perp_radius)
+      if ((beta - alpha >= 0) and (beta - alpha < math.pi) or
+	  (beta - alpha <= 0) and (alpha - beta > math.pi)) then
+	 self.shape[2] = arcshape(perp_center, perp_radius, alpha, beta) 
+      else
+	 self.shape[2] = rarcshape(perp_center, perp_radius, alpha, beta) 
       end
+      
+      -- self.shape[2] = circleshape(perp_center, perp_radius)
    end
 end
 
