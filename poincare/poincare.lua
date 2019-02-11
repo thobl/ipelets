@@ -138,25 +138,19 @@ function transform_from_unit_disk(v)
    end
 end
 
-function line_center(v1_in, v2_in)
-   local v1 = transform_to_unit_disk(v1_in)
-   local v2 = transform_to_unit_disk(v2_in)
-
-   local denominator = 2 * (v1.x * v2.y - v2.x * v1.y)
-   if denominator == 0 then
-      return ipe.Vector(math.huge, math.huge)
-   end
-
-   local center_x = (v1.x^2 * v2.y + v1.y^2 * v2.y + v2.y - 
-		     v2.x^2 * v1.y - v2.y^2 * v1.y - v1.y) / denominator
-   local center_y = 0
-   if math.abs(v1.y) > math.abs(v2.y) then
-      center_y = (v1.x^2 + v1.y^2 + 1 - 2 * v1.x * center_x)/(2 * v1.y);
+-- assumes the stadard Poincaré with center (0, 0) and radius 1
+function ideal_points(center, radius, v1, v2)
+   local ideal_point1 = ipe.Vector()
+   local ideal_point2 = ipe.Vector()
+   if radius == math.huge then
+      if v1:len() == 0 then v1 = v2 end
+      ideal_point1 = v1:normalized()
+      ideal_point2 = -ideal_point1
    else
-      center_y = (v2.x^2 + v2.y^2 + 1 - 2 * v2.x * center_x)/(2 * v2.y);
+      ideal_point1, ideal_point2 =
+	 circle_intersect(center, radius, ipe.Vector(0, 0), 1)
    end
-   local center = ipe.Vector(center_x, center_y);
-   return transform_from_unit_disk(center)
+   return ideal_point1, ideal_point2
 end
 
 function poincare_line(v1, v2)
@@ -181,16 +175,7 @@ function poincare_line(v1, v2)
 
    local radius = (v1 - center):len()
 
-   local ideal_point1 = ipe.Vector()
-   local ideal_point2 = ipe.Vector()
-   if radius == math.huge then
-      if v1:len() == 0 then v1 = v2 end
-      ideal_point1 = v1:normalized()
-      ideal_point2 = -ideal_point1
-   else
-      ideal_point1, ideal_point2 =
-	 circle_intersect(center, radius, ipe.Vector(0, 0), 1)
-   end
+   local ideal_point1, ideal_point2 = ideal_points(center, radius, v1, v2)
 
    center = transform_from_unit_disk(center)
    radius = transform_from_unit_disk(radius)
@@ -200,44 +185,50 @@ function poincare_line(v1, v2)
    return center, radius, ideal_point1, ideal_point2
 end
 
-function line_through_origin_ideal_points(v)
-   local v1 = transform_to_unit_disk(v):normalized()
-   local v2 = -v1
-   return transform_from_unit_disk(v1), transform_from_unit_disk(v2)
-end
+-- line perpendicular to line through v1 and v2 containing v2
+function perpendicular_line(v1, v2)
+   local c, r = poincare_line(v1, v2)
+   c = transform_to_unit_disk(c)
+   r = transform_to_unit_disk(r)
 
--- compute the center of the circle representing the line through
--- v2_in perpendicular to the line through v1_in--v2_in
-function perpendicular_line_center(v1_in, v2_in)
-   -- p is a point on the line
-   local p = transform_to_unit_disk(v2_in)
-   
-   local v1 = transform_to_unit_disk(v1_in)
-   if (v1 .. p)^2 == v1:sqLen() * p:sqLen() then
-      -- special case for line through the center..
-      local center_y = (p.y + p.x^2 * p.y + p.y^3) / (2 * p.x^2 + 2 * p.y^2)
-      local center_x = p.x / p.y * center_y
-      if center_y == 0 then
-	 center_x = (p.x^2 + p.y^2 - 2 * p.y * center_y + 1) / (2 * p.x)
+   local v1 = transform_to_unit_disk(v1)
+   local v2 = transform_to_unit_disk(v2)
+
+   local center = ipe.Vector()
+
+   if r == math.huge then
+      local center_y = (v2.y + v2.x^2 * v2.y + v2.y^3) / (2 * v2.x^2 + 2 * v2.y^2)
+      local center_x = v2.x / v2.y * center_y
+      if v2.y == 0 then
+	 center_x = (v2.x^2 + v2.y^2 - 2 * v2.y * center_y + 1) / (2 * v2.x)
       end
-      local center = ipe.Vector(center_x, center_y)
-      return transform_from_unit_disk(center)
-   else 
-      -- c is the center of the line through v1 and v2, r_sq is its
-      -- squared radius
-      local c = transform_to_unit_disk(line_center(v1_in, v2_in))
-      local r_sq = (c - p):sqLen()
-
-      -- local center_y = (a^2*u - a*u^2 + b^2*u - a*v^2 + u - R^2*u - a) / (2*b*u - 2*a*v)
-      local center_y = (c.x^2*p.x - c.x*p.x^2 + c.y^2*p.x - c.x*p.y^2 + p.x - r_sq*p.x - c.x) / (2*c.y*p.x - 2*c.x*p.y)
-      local center_x = (p.x^2 + p.y^2 - 2 * p.y * center_y + 1) / (2 * p.x)
-      if p.x == 0 then
-	 center_x = (c.x^2 + c.y^2 - 2 * c.y * center_y - r_sq + 1) / (2 * c.x)
+      center = ipe.Vector(center_x, center_y)
+   else
+      local center_y = (c.x^2 * v2.x - c.x * v2.x^2 +
+			c.y^2 * v2.x - c.x * v2.y^2 +
+			v2.x - r^2 * v2.x - c.x) / (2 * c.y * v2.x - 2 * c.x * v2.y)
+      local center_x = (v2.x^2 + v2.y^2 - 2 * v2.y * center_y + 1) / (2 * v2.x)
+      if v2.x == 0 then
+	 center_x = (c.x^2 + c.y^2 - 2 * c.y * center_y - r^2 + 1) / (2 * c.x)
       end
-
-      local center = ipe.Vector(center_x, center_y)
-      return transform_from_unit_disk(center)
+      center = ipe.Vector(center_x, center_y)
    end
+
+   local radius = (center - v2):len()
+   
+   local tmp = ipe.Vector()
+   if radius ~=radius then
+      tmp = (v1 - v2):orthogonal()
+      center = ipe.Vector(math.huge, math.huge)
+      radius = math.huge
+   end
+   local ideal_point1, ideal_point2 = ideal_points(center, radius, tmp, ipe.Vector())
+   
+   radius = transform_from_unit_disk(radius)
+   center = transform_from_unit_disk(center)
+   ideal_point1 = transform_from_unit_disk(ideal_point1)
+   ideal_point2 = transform_from_unit_disk(ideal_point2)
+   return center, radius, ideal_point1, ideal_point2
 end
 
 ----------------------------------------------------------------------
@@ -262,69 +253,28 @@ end
 function POINCARE_LINETOOL:compute()
    local v1 = self.v[1]
    local v2 = self.v[2]
-
    self.model.ui:explain("hyperbolic length: " .. tostring(distance(v1, v2)), 0)
-
-   -- local center = line_center(v1, v2)
-   -- local radius = (v1 - center):len()
 
    local center, radius, ideal_point1, ideal_point2 = poincare_line(v1, v2)
 
-   if radius == math.huge then
-      if self.mode == "poincare_line" then
-	 self.shape = { segmentshape(ideal_point1, ideal_point2) }
-	 -- v1 = transform_to_unit_disk(v1)
-	 -- if v1:len() == 0 then
-	 --    v1 = transform_to_unit_disk(v2)
-	 -- end
-
-	 -- v1 = v1:normalized(v1)
-	 -- v2 = -1*v1
-
-	 -- v1 = transform_from_unit_disk(v1)
-	 -- v2 = transform_from_unit_disk(v2)
-      else
-	 self.shape = { segmentshape(v1, v2) }
-      end
-   else
-      if self.mode == "poincare_line" then
-	 -- v1, v2 = circle_intersect(center, radius, poincare_disk.center, poincare_disk.radius)
-	 self.shape = { arcshape_by_endpoints(center, radius, ideal_point1, ideal_point2) }
-      else
-	 -- local r1 = v1 - center
-	 -- local r2 = v2 - center
-	 
-	 -- local alpha = r1:angle()
-	 -- local beta = r2:angle()
-
-	 -- if ((beta - alpha >= 0) and (beta - alpha < math.pi) or
-	 -- 	  (beta - alpha <= 0) and (alpha - beta > math.pi)) then
-	 -- 	 self.shape = { arcshape(center, radius, alpha, beta) }
-	 -- else
-	 -- 	 self.shape = { rarcshape(center, radius, alpha, beta) }
-	 -- end
-	 self.shape = { arcshape_by_endpoints(center, radius, v1, v2) }
-      end
+   if self.mode == "poincare_line" then
+      v1 = ideal_point1
+      v2 = ideal_point2
    end
 
-   if self.mode == "poincare_line_right_angle" and v2 ~= poincare_disk.center then
-      local perp_center = perpendicular_line_center(v1, v2)
-      local perp_radius = (perp_center - v2):len()
-      v1, v2 = circle_intersect(perp_center, perp_radius, poincare_disk.center, poincare_disk.radius)
-      self.shape[2] = arcshape_by_endpoints(perp_center, perp_radius, v1, v2)
-      -- -- todo: make a function for this
-      -- local r1 = v1 - perp_center
-      -- local r2 = v2 - perp_center
-      
-      -- local alpha = r1:angle()
-      -- local beta = r2:angle()
+   if radius == math.huge then
+      self.shape = { segmentshape(v1, v2) }
+   else
+      self.shape = { arcshape_by_endpoints(center, radius, v1, v2) }
+   end
 
-      -- if ((beta - alpha >= 0) and (beta - alpha < math.pi) or
-      -- 	  (beta - alpha <= 0) and (alpha - beta > math.pi)) then
-      -- 	 self.shape[2] = arcshape(perp_center, perp_radius, alpha, beta) 
-      -- else
-      -- 	 self.shape[2] = rarcshape(perp_center, perp_radius, alpha, beta) 
-      -- end
+   if self.mode == "poincare_line_right_angle" then
+      local center, radius, ideal_point1, ideal_point2 = perpendicular_line(v1, v2)
+      if radius == math.huge then
+	 self.shape[2] = segmentshape(ideal_point1, ideal_point2)
+      else
+	 self.shape[2] = arcshape_by_endpoints(center, radius, ideal_point1, ideal_point2)
+      end
    end
 end
 
