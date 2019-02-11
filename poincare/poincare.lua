@@ -25,37 +25,37 @@ setmetatable = _G.setmetatable
 type = _G.type
 
 ----------------------------------------------------------------------
--- basic shapes from goodies.lua
+-- basic stuff from  goodies.lua
 ----------------------------------------------------------------------
 function checkPrimaryIsCircle(model, arc_ok)
-  local p = model:page()
-  local prim = p:primarySelection()
-  if not prim then model.ui:explain("no selection") return end
-  local obj = p[prim]
-  if obj:type() == "path" then
-    local shape = obj:shape()
-    if #shape == 1 then
-      local s = shape[1]
-      if s.type == "ellipse" then
-	return prim, obj, s[1]:translation(), shape
+   local p = model:page()
+   local prim = p:primarySelection()
+   if not prim then model.ui:explain("no selection") return end
+   local obj = p[prim]
+   if obj:type() == "path" then
+      local shape = obj:shape()
+      if #shape == 1 then
+	 local s = shape[1]
+	 if s.type == "ellipse" then
+	    return prim, obj, s[1]:translation(), shape
+	 end
+	 if arc_ok and s.type == "curve" and #s == 1 and s[1].type == "arc" then
+	    return prim, obj, s[1].arc:matrix():translation(), shape
+	 end
       end
-      if arc_ok and s.type == "curve" and #s == 1 and s[1].type == "arc" then
-	return prim, obj, s[1].arc:matrix():translation(), shape
-      end
-    end
-  end
-  if arc_ok then
-    model:warning("Primary selection is not an arc, a circle, or an ellipse")
-  else
-    model:warning("Primary selection is not a circle or an ellipse")
-  end
+   end
+   if arc_ok then
+      model:warning("Primary selection is not an arc, a circle, or an ellipse")
+   else
+      model:warning("Primary selection is not a circle or an ellipse")
+   end
 end
 
 ----------------------------------------------------------------------
 -- basic shapes from tools.lua
 ----------------------------------------------------------------------
 local function segmentshape(v1, v2)
-  return { type="curve", closed=false; { type="segment"; v1, v2 } }
+   return { type="curve", closed=false; { type="segment"; v1, v2 } }
 end
 
 local function circleshape(center, radius)
@@ -64,28 +64,24 @@ local function circleshape(center, radius)
 end
 
 local function arcshape(center, radius, alpha, beta)
-  local a = ipe.Arc(ipe.Matrix(radius, 0, 0, radius, center.x, center.y),
-		    alpha, beta)
-  local v1 = center + radius * ipe.Direction(alpha)
-  local v2 = center + radius * ipe.Direction(beta)
-  return { type="curve", closed=false; { type="arc", arc=a; v1, v2 } }
+   local a = ipe.Arc(ipe.Matrix(radius, 0, 0, radius, center.x, center.y),
+		     alpha, beta)
+   local v1 = center + radius * ipe.Direction(alpha)
+   local v2 = center + radius * ipe.Direction(beta)
+   return { type="curve", closed=false; { type="arc", arc=a; v1, v2 } }
 end
 
 local function rarcshape(center, radius, alpha, beta)
-  local a = ipe.Arc(ipe.Matrix(radius, 0, 0, -radius, center.x, center.y),
-		    alpha, beta)
-  local v1 = center + radius * ipe.Direction(alpha)
-  local v2 = center + radius * ipe.Direction(beta)
-  return { type="curve", closed=false; { type="arc", arc=a; v1, v2 } }
+   local a = ipe.Arc(ipe.Matrix(radius, 0, 0, -radius, center.x, center.y),
+		     alpha, beta)
+   local v1 = center + radius * ipe.Direction(alpha)
+   local v2 = center + radius * ipe.Direction(beta)
+   return { type="curve", closed=false; { type="arc", arc=a; v1, v2 } }
 end
 
 ----------------------------------------------------------------------
 -- some other basic stuff
 ----------------------------------------------------------------------
-function arc(center, radius)
-   return ipe.Arc(ipe.Matrix(radius, 0, 0, radius, center.x, center.y))
-end
-
 function arcshape_by_endpoints(center, radius, v1, v2)
    local r1 = v1 - center
    local r2 = v2 - center
@@ -238,16 +234,16 @@ POINCARE_LINETOOL = {}
 POINCARE_LINETOOL.__index = POINCARE_LINETOOL
 
 function POINCARE_LINETOOL:new(model, mode)
-  local tool = {}
-  setmetatable(tool, POINCARE_LINETOOL)
-  tool.model = model
-  tool.mode = mode
-  local v = model.ui:pos()
-  tool.v = { v, v}
-  tool.cur = 2
-  model.ui:shapeTool(tool)
-  tool.setColor(1.0, 0, 0)
-  return tool
+   local tool = {}
+   setmetatable(tool, POINCARE_LINETOOL)
+   tool.model = model
+   tool.mode = mode
+   local v = model.ui:pos()
+   tool.v = { v, v}
+   tool.cur = 2
+   model.ui:shapeTool(tool)
+   tool.setColor(1.0, 0, 0)
+   return tool
 end
 
 function POINCARE_LINETOOL:compute()
@@ -279,39 +275,39 @@ function POINCARE_LINETOOL:compute()
 end
 
 function POINCARE_LINETOOL:mouseButton(button, modifiers, press)
-  if not press then return end
-  local v = self.model.ui:pos()
-  -- refuse point identical to previous
-  if v == self.v[self.cur - 1] then return end
-  self.v[self.cur] = v
-  self:compute()
-  if self.cur == 2 then
-     if self.mode == "poincare_line_right_angle" then
-	table.remove(self.shape, 1)
-     end
-     self.model.ui:finishTool()
-     local obj = ipe.Path(self.model.attributes, self.shape, true)
-     self.model:creation("create line", obj)
-  else
-    self.cur = self.cur + 1
-    self.model.ui:update(false)
-  end
+   if not press then return end
+   local v = self.model.ui:pos()
+   -- refuse point identical to previous
+   if v == self.v[self.cur - 1] then return end
+   self.v[self.cur] = v
+   self:compute()
+   if self.cur == 2 then
+      if self.mode == "poincare_line_right_angle" then
+	 table.remove(self.shape, 1)
+      end
+      self.model.ui:finishTool()
+      local obj = ipe.Path(self.model.attributes, self.shape, true)
+      self.model:creation("create line", obj)
+   else
+      self.cur = self.cur + 1
+      self.model.ui:update(false)
+   end
 end
 
 function POINCARE_LINETOOL:mouseMove()
-  self.v[self.cur] = self.model.ui:pos()
-  self:compute()
-  self.setShape(self.shape)
-  self.model.ui:update(false) -- update tool
+   self.v[self.cur] = self.model.ui:pos()
+   self:compute()
+   self.setShape(self.shape)
+   self.model.ui:update(false) -- update tool
 end
 
 function POINCARE_LINETOOL:key(text, modifiers)
-  if text == "\027" then
-    self.model.ui:finishTool()
-    return true
-  else
-    return false
-  end
+   if text == "\027" then
+      self.model.ui:finishTool()
+      return true
+   else
+      return false
+   end
 end
 
 ----------------------------------------------------------------------
@@ -320,16 +316,16 @@ POINCARE_CIRCLETOOL = {}
 POINCARE_CIRCLETOOL.__index = POINCARE_CIRCLETOOL
 
 function POINCARE_CIRCLETOOL:new(model, mode)
-  local tool = {}
-  setmetatable(tool, POINCARE_CIRCLETOOL)
-  tool.model = model
-  tool.mode = mode
-  local v = model.ui:pos()
-  tool.v = { v, v, v}
-  tool.cur = 2
-  model.ui:shapeTool(tool)
-  tool.setColor(1.0, 0, 0)
-  return tool
+   local tool = {}
+   setmetatable(tool, POINCARE_CIRCLETOOL)
+   tool.model = model
+   tool.mode = mode
+   local v = model.ui:pos()
+   tool.v = { v, v, v}
+   tool.cur = 2
+   model.ui:shapeTool(tool)
+   tool.setColor(1.0, 0, 0)
+   return tool
 end
 
 function POINCARE_CIRCLETOOL:compute()
@@ -379,36 +375,36 @@ function POINCARE_CIRCLETOOL:compute()
 end
 
 function POINCARE_CIRCLETOOL:mouseButton(button, modifiers, press)
-  if not press then return end
-  local v = self.model.ui:pos()
-  -- refuse point identical to previous
-  if v == self.v[self.cur - 1] then return end
-  self.v[self.cur] = v
-  self:compute()
-  if self.cur == 3 or (self.cur == 2 and self.mode == "poincare_circle1") then
-    self.model.ui:finishTool()
-    local obj = ipe.Path(self.model.attributes, { self.shape })
-    self.model:creation("create circle", obj)
-  else
-    self.cur = self.cur + 1
-    self.model.ui:update(false)
-  end
+   if not press then return end
+   local v = self.model.ui:pos()
+   -- refuse point identical to previous
+   if v == self.v[self.cur - 1] then return end
+   self.v[self.cur] = v
+   self:compute()
+   if self.cur == 3 or (self.cur == 2 and self.mode == "poincare_circle1") then
+      self.model.ui:finishTool()
+      local obj = ipe.Path(self.model.attributes, { self.shape })
+      self.model:creation("create circle", obj)
+   else
+      self.cur = self.cur + 1
+      self.model.ui:update(false)
+   end
 end
 
 function POINCARE_CIRCLETOOL:mouseMove()
-  self.v[self.cur] = self.model.ui:pos()
-  self:compute()
-  self.setShape({ self.shape })
-  self.model.ui:update(false) -- update tool
+   self.v[self.cur] = self.model.ui:pos()
+   self:compute()
+   self.setShape({ self.shape })
+   self.model.ui:update(false) -- update tool
 end
 
 function POINCARE_CIRCLETOOL:key(text, modifiers)
-  if text == "\027" then
-    self.model.ui:finishTool()
-    return true
-  else
-    return false
-  end
+   if text == "\027" then
+      self.model.ui:finishTool()
+      return true
+   else
+      return false
+   end
 end
 
 ----------------------------------------------------------------------
@@ -433,7 +429,7 @@ function poincare_line_mode(model, num)
       model.mode = "poincare_circle3"
       model.ui:explain("Poincaré tool: cirle (radius = distance between first and second point, center = thrid point)")
    end
-      
+   
 end
 
 function set_disk(model, num)
