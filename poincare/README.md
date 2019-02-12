@@ -35,3 +35,8 @@ the d-key.
 | H, Shift+O | select the circle tool (by center + radius) |
 | H, Ctrl+O  | select the circle tool (by radius + center) |
 
+# The Tools #
+
+## Line Tool ##
+
+Draw the line through two points. ![line tool example](line-tool.png)
