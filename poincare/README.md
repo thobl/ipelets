@@ -39,7 +39,5 @@ the d-key.
 
 ## Line Tool ##
 
-Draw the line through two points.
-
-<img align="right" width="200" height="200" src="poincare/line-tool.png"> 
+Draw the line through two points. ![line tool example](line-tool.png){:height="36px" width="36px"}
 
