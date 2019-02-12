@@ -39,4 +39,4 @@ the d-key.
 
 ## Line Tool ##
 
-Draw the line through two points. ![line tool example](line-tool.png)
+<img align="left" width="100" height="100" src="line-tool.png"> Draw the line through two points.
