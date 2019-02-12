@@ -39,5 +39,39 @@ the d-key.
 
 ## Line Tool ##
 
-Draw the line through two points. ![line tool example](line-tool.png){:height="36px" width="36px"}
+Draw the line through two points.
 
+## Line Segment Tool ##
+
+Draw the line segment between two points.
+
+## Right Angle Tool ##
+
+Draw a line perpendicular to a given line.  This tool can be used in
+two ways.  If you click three points, it will create a line through
+the third point perpendicular to the line through the first two
+points.  If your second click is a right click, it will draw a line
+through the second point perpendicular to the line through the first
+two points.
+![right angle tool](right-angle-tool.png)
+
+## Tangent Tool ##
+
+Draw a line that is tangent to a euclidean line through two points and
+contains the second point.
+
+![tangent tool](tangent-tool.png)
+
+## Circle Tool ##
+
+Draw a circle centered at the first point going through the second.
+
+## Circle Tool (by Center + Radius) ##
+
+The first point is used as center, the distance between the second and
+third point is the radius.
+
+## Circle Tool (by Radius + Center) ##
+
+The distance between the first and second point specify the radius,
+the third point us used as center.
