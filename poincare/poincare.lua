@@ -500,9 +500,9 @@ methods = {
    { label = "line segment tool", run=poincare_line_mode},
    { label = "right angle tool", run=poincare_line_mode},
    { label = "tangent tool", run=poincare_line_mode},
-   { label = "circle", run=poincare_line_mode},
-   { label = "circle (by center + radius)", run=poincare_line_mode},
-   { label = "circle (by radius + center)", run=poincare_line_mode},
+   { label = "circle tool", run=poincare_line_mode},
+   { label = "circle tool (by center + radius)", run=poincare_line_mode},
+   { label = "circle tool (by radius + center)", run=poincare_line_mode},
 }
 
 shortcuts.ipelet_1_poincare = "H,D"
