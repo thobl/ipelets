@@ -269,8 +269,7 @@ function POINCARE_LINETOOL:compute()
       self.shape = { arcshape_by_endpoints(center, radius, v1, v2) }
    end
 
-   if self.mode == "poincare_line_right_angle" or 
-      self.mode == "poincare_line_lot" then
+   if self.mode == "poincare_line_right_angle" then
       local v3 = v2
       if (self.cur == 3) then v3 = self.v[3] end
       local center, radius, ideal_point1, ideal_point2 = perpendicular_line(v1, v2, v3)
@@ -280,16 +279,6 @@ function POINCARE_LINETOOL:compute()
 	 self.shape[2] = arcshape_by_endpoints(center, radius, ideal_point1, ideal_point2)
       end
    end
-
-   -- if self.mode == "poincare_line_lot" and self.cur == 3 then
-   --    local v3 = self.v[3]
-   --    local center, radius, ideal_point1, ideal_point2 = perpendicular_line(v1, v2, v3)
-   --    if radius == math.huge then
-   -- 	 self.shape[2] = segmentshape(ideal_point1, ideal_point2)
-   --    else
-   -- 	 self.shape[2] = arcshape_by_endpoints(center, radius, ideal_point1, ideal_point2)
-   --    end
-   -- end
 end
 
 function POINCARE_LINETOOL:mouseButton(button, modifiers, press)
@@ -299,9 +288,9 @@ function POINCARE_LINETOOL:mouseButton(button, modifiers, press)
    if v == self.v[self.cur - 1] then return end
    self.v[self.cur] = v
    self:compute()
-   if self.cur == 3 or (self.mode ~= "poincare_line_lot" and self.cur == 2) then
-      if self.mode == "poincare_line_right_angle" or
-	 self.mode == "poincare_line_lot" then
+   if self.cur == 3 or button == 2 or 
+      (self.mode ~= "poincare_line_right_angle" and self.cur == 2) then
+      if self.mode == "poincare_line_right_angle" then
 	 table.remove(self.shape, 1)
       end
       self.model.ui:finishTool()
@@ -438,9 +427,6 @@ function poincare_line_mode(model, num)
    elseif num == 4 then
       model.mode = "poincare_line_right_angle"
       model.ui:explain("Poincaré tool: right angle")
-   elseif num == 8 then
-      model.mode = "poincare_line_lot"
-      model.ui:explain("Poincaré tool: lot")
    elseif num == 5 then
       model.mode = "poincare_circle1"
       model.ui:explain("Poincaré tool: cirle (center = first point, radius = distance between center and second point)")
@@ -476,7 +462,6 @@ methods = {
    { label = "circle", run=poincare_line_mode},
    { label = "circle (by center + radius)", run=poincare_line_mode},
    { label = "circle (by radius + center)", run=poincare_line_mode},
-   { label = "lot (test)", run=poincare_line_mode},
 }
 
 shortcuts.ipelet_1_poincare = "H,D"
@@ -486,4 +471,3 @@ shortcuts.ipelet_4_poincare = "H,Ctrl+P"
 shortcuts.ipelet_5_poincare = "H,O"
 shortcuts.ipelet_6_poincare = "H,Shift+O"
 shortcuts.ipelet_7_poincare = "H,Ctrl+O"
-shortcuts.ipelet_8_poincare = "H,Alt+P"
