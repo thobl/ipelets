@@ -47,20 +47,19 @@ Draw the line segment between two points.
 
 ## Right Angle Tool ##
 
-Draw a line perpendicular to a given line.  This tool can be used in
-two ways.  If you click three points, it will create a line through
-the third point perpendicular to the line through the first two
-points.  If your second click is a right click, it will draw a line
-through the second point perpendicular to the line through the first
-two points.
-![right angle tool](right-angle-tool.png)
+![right angle tool](right-angle-tool.png) Draw a line perpendicular to
+a given line.  This tool can be used in two ways.  If you click three
+points, it will create a line through the third point perpendicular to
+the line through the first two points.  If your second click is a
+right click, it will draw a line through the second point
+perpendicular to the line through the first two points.
+
 
 ## Tangent Tool ##
 
-Draw a line that is tangent to a euclidean line through two points and
-contains the second point.
+![tangent tool](tangent-tool.png) Draw a line that is tangent to a
+euclidean line through two points and contains the second point.
 
-![tangent tool](tangent-tool.png)
 
 ## Circle Tool ##
 
