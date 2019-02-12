@@ -187,9 +187,9 @@ function perpendicular_line(v1, v2, v3)
    c = transform_to_unit_disk(c)
    r = transform_to_unit_disk(r)
 
-   local v1 = transform_to_unit_disk(v1)
-   local v2 = transform_to_unit_disk(v2)
-   local v3 = transform_to_unit_disk(v3)
+   v1 = transform_to_unit_disk(v1)
+   v2 = transform_to_unit_disk(v2)
+   v3 = transform_to_unit_disk(v3)
 
    local center = ipe.Vector()
 
@@ -232,6 +232,36 @@ function perpendicular_line(v1, v2, v3)
    return center, radius, ideal_point1, ideal_point2
 end
 
+-- line through v2 tangent to ouclidean line through v1 and v2
+function line_by_tangent(v1, v2)
+   v1 = transform_to_unit_disk(v1)
+   v2 = transform_to_unit_disk(v2)
+   
+   -- local center_y = (a * u^2 - a * v^2 - a + 2 * b * u * v - u^3 - u * v^2 + u) / (2 * b * u - 2 * a * v)
+   local center_y = (v1.x * v2.x^2 - v1.x * v2.y^2 - v1.x +
+		     2 * v1.y * v2.x * v2.y
+		     - v2.x^3 - v2.x * v2.y^2 + v2.x) / (2 * v1.y * v2.x - 2 * v1.x * v2.y)
+   local center_x = (v2.x^2 - 2 * v2.y * center_y + v2.y^2 + 1) / (2 * v2.x)
+   if v2.x == 0 then
+      center_x = (v1.y * v2.y - v2.y^2 + (v2.y - v1.y) * center_y) /  v1.x
+   end
+   local center = ipe.Vector(center_x, center_y)
+   local radius = (center - v2):len()
+
+   if (radius ~= radius or radius > 1e+10) then
+      center = ipe.Vector(math.huge, math.huge)
+      radius = math.huge
+   end
+   
+   local ideal_point1, ideal_point2 = ideal_points(center, radius, v1, v2)
+
+   radius = transform_from_unit_disk(radius)
+   center = transform_from_unit_disk(center)
+   ideal_point1 = transform_from_unit_disk(ideal_point1)
+   ideal_point2 = transform_from_unit_disk(ideal_point2)
+   return center, radius, ideal_point1, ideal_point2
+end
+
 ----------------------------------------------------------------------
 -- the drawing tools
 ----------------------------------------------------------------------
@@ -254,19 +284,25 @@ end
 function POINCARE_LINETOOL:compute()
    local v1 = self.v[1]
    local v2 = self.v[2]
+   self.shape = {}
    self.model.ui:explain("hyperbolic length: " .. tostring(distance(v1, v2)), 0)
 
    local center, radius, ideal_point1, ideal_point2 = poincare_line(v1, v2)
 
-   if self.mode == "poincare_line" then
+   if self.mode == "poincare_line_tangent" and v1 ~= v2 then
+      center, radius, ideal_point1, ideal_point2 = line_by_tangent(v1, v2)
+      self.shape[#self.shape + 1] = segmentshape(v1, v2)
+   end
+
+   if self.mode == "poincare_line" or self.mode == "poincare_line_tangent" then
       v1 = ideal_point1
       v2 = ideal_point2
    end
 
    if radius == math.huge then
-      self.shape = { segmentshape(v1, v2) }
+      self.shape[#self.shape + 1] = segmentshape(v1, v2) 
    else
-      self.shape = { arcshape_by_endpoints(center, radius, v1, v2) }
+      self.shape[#self.shape + 1] = arcshape_by_endpoints(center, radius, v1, v2)
    end
 
    if self.mode == "poincare_line_right_angle" then
@@ -274,9 +310,9 @@ function POINCARE_LINETOOL:compute()
       if (self.cur == 3) then v3 = self.v[3] end
       local center, radius, ideal_point1, ideal_point2 = perpendicular_line(v1, v2, v3)
       if radius == math.huge then
-	 self.shape[2] = segmentshape(ideal_point1, ideal_point2)
+	 self.shape[#self.shape + 1] = segmentshape(ideal_point1, ideal_point2)
       else
-	 self.shape[2] = arcshape_by_endpoints(center, radius, ideal_point1, ideal_point2)
+	 self.shape[#self.shape + 1] = arcshape_by_endpoints(center, radius, ideal_point1, ideal_point2)
       end
    end
 end
@@ -290,9 +326,10 @@ function POINCARE_LINETOOL:mouseButton(button, modifiers, press)
    self:compute()
    if self.cur == 3 or button == 2 or 
       (self.mode ~= "poincare_line_right_angle" and self.cur == 2) then
-      if self.mode == "poincare_line_right_angle" then
-	 table.remove(self.shape, 1)
-      end
+      -- if self.mode == "poincare_line_right_angle" then
+      -- 	 table.remove(self.shape, 1)
+      -- end
+      self.shape = { self.shape[#self.shape] }
       self.model.ui:finishTool()
       local obj = ipe.Path(self.model.attributes, self.shape, true)
       self.model:creation("create line", obj)
@@ -428,12 +465,15 @@ function poincare_line_mode(model, num)
       model.mode = "poincare_line_right_angle"
       model.ui:explain("Poincaré tool: right angle")
    elseif num == 5 then
+      model.mode = "poincare_line_tangent"
+      model.ui:explain("Poincaré tool: tangent")
+   elseif num == 6 then
       model.mode = "poincare_circle1"
       model.ui:explain("Poincaré tool: cirle (center = first point, radius = distance between center and second point)")
-   elseif num == 6 then
+   elseif num == 7 then
       model.mode = "poincare_circle2"
       model.ui:explain("Poincaré tool: cirle (center = first point, radius = distance between second and third point)")
-   elseif num == 7 then
+   elseif num == 8 then
       model.mode = "poincare_circle3"
       model.ui:explain("Poincaré tool: cirle (radius = distance between first and second point, center = thrid point)")
    end
@@ -459,6 +499,7 @@ methods = {
    { label = "line tool", run=poincare_line_mode},
    { label = "line segment tool", run=poincare_line_mode},
    { label = "right angle tool", run=poincare_line_mode},
+   { label = "tangent tool", run=poincare_line_mode},
    { label = "circle", run=poincare_line_mode},
    { label = "circle (by center + radius)", run=poincare_line_mode},
    { label = "circle (by radius + center)", run=poincare_line_mode},
@@ -468,6 +509,7 @@ shortcuts.ipelet_1_poincare = "H,D"
 shortcuts.ipelet_2_poincare = "H,Shift+P"
 shortcuts.ipelet_3_poincare = "H,P"
 shortcuts.ipelet_4_poincare = "H,Ctrl+P"
-shortcuts.ipelet_5_poincare = "H,O"
-shortcuts.ipelet_6_poincare = "H,Shift+O"
-shortcuts.ipelet_7_poincare = "H,Ctrl+O"
+shortcuts.ipelet_5_poincare = "H,Alt+P"
+shortcuts.ipelet_6_poincare = "H,O"
+shortcuts.ipelet_7_poincare = "H,Shift+O"
+shortcuts.ipelet_8_poincare = "H,Ctrl+O"
