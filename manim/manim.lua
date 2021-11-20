@@ -211,32 +211,61 @@ function Properties(model, obj)
 end
 
 
+function PrintCode(code, depth)
+   local format_string = string.format("%%%ds", depth * 4)
+   local space = string.format(format_string, "")
+   print(space .. string.gsub(code, "\n", "\n" .. space))
+end
+
+
 function Create(model, obj, name)
+   local props = Properties(model, obj)
+
    if obj:type() == "path" then
       local shape = obj:shape()
       -- TODO: assuming just one subpath
       local path = shape[1]
       if path.type == "ellipse" then
-         -- TODO: assuming a circle; not an ellipse
-         local m = path[1]:elements()
-         local r = SizeToManim(m[1])
-         local p = PointToManim(m[5], m[6])
-         local fill = Color(model, obj:get("fill"))
-         return name .. " = Circle(radius=" .. r .. ", arc_center=[" .. p.x .. ", " .. p.y .. ", 0.], " .. Properties(model, obj) .. ")"
+
+         local m = path[1]
+         local c = obj:matrix() * m:translation()
+         local v1 = obj:matrix():linear() * m:linear() * ipe.Vector(1, 0)
+         local v2 = obj:matrix():linear() * m:linear() * ipe.Vector(0, 1)
+
+         c = PointToManim(c.x, c.y)
+
+         if v1:sqLen() == v2:sqLen() then
+            -- circle
+            local r = SizeToManim(v1:len())
+            return string.format("%s = Circle(radius=%f, arc_center=[%f, %f, 0.0], %s)",
+                                 name, r, c.x, c.y, props)
+         else
+            -- ellipse
+            local r1 = SizeToManim(v1:len());
+            local r2 = SizeToManim(v2:len());
+            local angle = v1:angle();
+
+            local create = string.format("%s = Ellipse(width=%f, height=%f, arc_center=[%f, %f, 0.0], %s)",
+                                         name, 2 * r1, 2 * r2, c.x, c.y, props)
+            local rotate = string.format("%s.rotate(%f)", name, angle)
+
+            return create .. "\n" .. rotate
+         end
+
       elseif path.type == "curve" then
          -- TODO: assuming a closed polygon
-         local points = {path[1][1]}
+         local points = {obj:matrix() * path[1][1]}
          for segment = 1, #path do
-            table.insert(points, path[segment][2])
+            table.insert(points, obj:matrix() * path[segment][2])
          end
          local point_list = name .. "_points = [\n"
          for _, point in pairs(points) do
             local p = PointToManim(point.x, point.y)
             point_list = point_list .. "    [" .. p.x .. ", " .. p.y .. ", 0],\n"
          end
-         point_list = point_list .. "]\n"
-         local fill = Color(model, obj:get("fill"))
-         return point_list .. name .. " = Polygon(*" .. name .. "_points, " .. Properties(model, obj) .. ")"
+         point_list = point_list .. "]"
+         local create = string.format("%s = Polygon(*%s_points, %s)", name, name, props)
+         return point_list .. "\n" .. create
       end
    end
    return nil
@@ -244,6 +273,12 @@ end
 
 
 function Export(model)
+   PrintCode("from manim import *", 0)
+   PrintCode("", 0)
+   PrintCode("class AnimateExample(Scene):", 0)
+   PrintCode("def construct(self):", 1)
+   PrintCode("self.camera.background_color = WHITE", 2)
+
    local p = model:page()
    local obj_by_view = ObjectsByView(model, p)
 
@@ -259,7 +294,7 @@ function Export(model)
    local to_be_removed = {}
 
    for view = 1, p:countViews() + 1 do
-      print("## view " .. view)
+      PrintCode("## view " .. view, 2)
 
       -- collect animations occurring for this view
       local anims = {}
@@ -279,7 +314,7 @@ function Export(model)
          if not prev_obj then
             -- object with new label -> create
             local name = VariableName(label, view)
-            print(Create(model, obj, name))
+            PrintCode(Create(model, obj, name), 2)
             table.insert(anims, "Create(".. name .. ")")
             name_by_label[label] = name
 
@@ -287,7 +322,7 @@ function Export(model)
             -- new object with existing label -> transform
             local name = VariableName(label, view)
             local prev_name = name_by_label[label]
-            print(Create(model, obj, name))
+            PrintCode(Create(model, obj, name), 2)
             table.insert(anims, "Transform(" .. prev_name .. ", " .. name .. ")")
             table.insert(post_anim, "self.remove(".. prev_name .. ")")
             name_by_label[label] = name
@@ -301,15 +336,15 @@ function Export(model)
       end
 
       -- do the animations
-      print("self.play(")
+      PrintCode("self.play(", 2)
       for _, anim in pairs(anims) do
-         print("    " .. anim .. ",")
+         PrintCode(anim .. ",", 3)
       end
-      print(")")
+      PrintCode(")", 2)
 
       -- post-animiation cleanup
       for _, post in pairs(post_anim) do
-         print(post)
+         PrintCode(post, 2)
       end
    end
 end
@@ -322,6 +357,6 @@ methods = {
   { label = "export", run=Export },
 }
 
-shortcuts.ipelet_1_test = "tab,L"
-shortcuts.ipelet_2_test = "tab,S"
-shortcuts.ipelet_3_test = "tab,E"
+shortcuts.ipelet_1_manim = "tab,L"
+shortcuts.ipelet_2_manim = "tab,S"
+shortcuts.ipelet_3_manim = "tab,E"
