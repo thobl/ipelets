@@ -173,21 +173,13 @@ function VariableName(label, view)
    return name
 end
 
+
+-- transformation matrix from ipe coordinate system to manim coordinate system
 AspectRatio = 16.0 / 9.0
-Height = 8.0
-Width = Height * AspectRatio
+ManimHeight = 8.0
+ManimWidth = ManimHeight * AspectRatio
 Scale = 0.02
-
-
-function PointToManim(x, y)
-   return {x = Scale * x - Width / 2, y = Scale * y - Height / 2}
-end
-
-
-function SizeToManim(r)
-   return r * Scale
-end
-
+ToManim = ipe.Translation(- ManimWidth / 2, - ManimHeight / 2) * ipe.Matrix(Scale, 0, 0, Scale)
 
 function Color(model, name)
    local rgb = model.doc:sheets():find("color", name)
@@ -225,30 +217,22 @@ function Create(model, obj, name)
       local shape = obj:shape()
       -- TODO: assuming just one subpath
       local path = shape[1]
-      if path.type == "ellipse" then
+      if path.type == "ellipse" then -- circle or ellipse
+         local m_obj = obj:matrix()
+         local m_path = path[1]
+         local c = ToManim * m_obj * m_path:translation()
+         local v1 = ToManim:linear() * m_obj:linear() * m_path:linear() * ipe.Vector(1, 0)
+         local v2 = ToManim:linear() * m_obj:linear() * m_path:linear() * ipe.Vector(0, 1)
 
-         local m = path[1]
-         local c = obj:matrix() * m:translation()
-         local v1 = obj:matrix():linear() * m:linear() * ipe.Vector(1, 0)
-         local v2 = obj:matrix():linear() * m:linear() * ipe.Vector(0, 1)
-
-         c = PointToManim(c.x, c.y)
-
-         if v1:sqLen() == v2:sqLen() then
-            -- circle
-            local r = SizeToManim(v1:len())
+         if v1:sqLen() == v2:sqLen() then -- circle
             return {create = string.format("%s = Circle(radius=%f, arc_center=[%f, %f, 0.0], %s)",
-                                           name, r, c.x, c.y, props),
+                                           name, v1:len(), c.x, c.y, props),
                     anim = "Create(".. name .. "),"}
-         else
-            -- ellipse
-            local r1 = SizeToManim(v1:len());
-            local r2 = SizeToManim(v2:len());
-            local angle = v1:angle();
 
+         else -- ellipse
             local create = string.format("%s = Ellipse(width=%f, height=%f, arc_center=[%f, %f, 0.0], %s)",
-                                         name, 2 * r1, 2 * r2, c.x, c.y, props)
-            local rotate = string.format("%s.rotate(%f)", name, angle)
+                                         name, 2 * v1:len(), 2 * v2:len(), c.x, c.y, props)
+            local rotate = string.format("%s.rotate(%f)", name, v1:angle())
 
             return {create = create .. "\n" .. rotate,
                     anim = "Create(".. name .. "),"}
@@ -256,13 +240,12 @@ function Create(model, obj, name)
 
       elseif path.type == "curve" then
          if path.closed then
-            local points = {obj:matrix() * path[1][1]}
+            local points = {ToManim * obj:matrix() * path[1][1]}
             for segment = 1, #path do
-               table.insert(points, obj:matrix() * path[segment][2])
+               table.insert(points, ToManim * obj:matrix() * path[segment][2])
             end
             local point_list = ""
-            for _, point in pairs(points) do
-               local p = PointToManim(point.x, point.y)
+            for _, p in pairs(points) do
                point_list = string.format("%s\n    [%f, %f, 0],",
                                           point_list, p.x, p.y)
             end
@@ -272,10 +255,8 @@ function Create(model, obj, name)
          else
             local seg_list = ""
             for segment = 1, #path do
-               local s = obj:matrix() * path[segment][1]
-               s = PointToManim(s.x, s.y)
-               local t = obj:matrix() * path[segment][2]
-               t = PointToManim(t.x, t.y)
+               local s = ToManim * obj:matrix() * path[segment][1]
+               local t = ToManim * obj:matrix() * path[segment][2]
                seg_list = string.format("%s\n    [[%f, %f, 0], [%f, %f, 0]],",
                                         seg_list, s.x, s.y, t.x, t.y)
             end
