@@ -215,55 +215,74 @@ function Create(model, obj, name)
 
    if obj:type() == "path" then
       local shape = obj:shape()
-      -- TODO: assuming just one subpath
       local path = shape[1]
-      if path.type == "ellipse" then -- circle or ellipse
-         local m_obj = obj:matrix()
-         local m_path = path[1]
-         local c = ToManim * m_obj * m_path:translation()
-         local v1 = ToManim:linear() * m_obj:linear() * m_path:linear() * ipe.Vector(1, 0)
-         local v2 = ToManim:linear() * m_obj:linear() * m_path:linear() * ipe.Vector(0, 1)
+      if #shape > 1 then
+         ReportProblem(model, "Object " .. name .. " consists of multiple subpaths.  Only the first subpath will be rendered.")
+      end
 
-         if v1:sqLen() == v2:sqLen() then -- circle
+      -- circle or ellipse
+      if path.type == "ellipse" then
+         local c = ToManim * obj:matrix() * path[1]:translation()
+         local v1 = ToManim:linear() * obj:matrix():linear() * path[1]:linear() * ipe.Vector(1, 0)
+         local v2 = ToManim:linear() * obj:matrix():linear() * path[1]:linear() * ipe.Vector(0, 1)
+
+         -- circle
+         if v1:sqLen() == v2:sqLen() then
             return {create = string.format("%s = Circle(radius=%f, arc_center=[%f, %f, 0.0], %s)",
                                            name, v1:len(), c.x, c.y, props),
                     anim = "Create(".. name .. "),"}
-
-         else -- ellipse
-            local create = string.format("%s = Ellipse(width=%f, height=%f, arc_center=[%f, %f, 0.0], %s)",
-                                         name, 2 * v1:len(), 2 * v2:len(), c.x, c.y, props)
-            local rotate = string.format("%s.rotate(%f)", name, v1:angle())
-
-            return {create = create .. "\n" .. rotate,
-                    anim = "Create(".. name .. "),"}
          end
 
-      elseif path.type == "curve" then
-         if path.closed then
-            local points = {ToManim * obj:matrix() * path[1][1]}
-            for segment = 1, #path do
+         -- ellpise
+         local create = string.format("%s = Ellipse(width=%f, height=%f, arc_center=[%f, %f, 0.0], %s)",
+                                      name, 2 * v1:len(), 2 * v2:len(), c.x, c.y, props)
+         local rotate = string.format("%s.rotate(%f)", name, v1:angle())
+
+         return {create = create .. "\n" .. rotate,
+                 anim = "Create(".. name .. "),"}
+      end
+
+      -- curve (polyline, spline, arc)
+      if path.type == "curve" then
+         -- collect the points on the curve
+         local points = {ToManim * obj:matrix() * path[1][1]}
+         for segment = 1, #path do
+            if path[segment].type == "segment" then
+               -- just an edge
+               table.insert(points, ToManim * obj:matrix() * path[segment][2])
+            elseif path[segment].type == "arc" then
+               -- render circular arc
+               local arc = path[segment].arc
+               local phi1, phi2 = arc:angles()
+               local delta_phi = (phi2 - phi1)
+               if delta_phi < 0 then
+                  delta_phi = 2 * math.pi + delta_phi
+               end
+
+               local step = 0.1
+               for phi = step, delta_phi, step do
+                  local p = ToManim * obj:matrix() * arc:matrix() * ipe.Rotation(phi1 + phi) * ipe.Vector(1, 0)
+                  table.insert(points, p)
+               end
                table.insert(points, ToManim * obj:matrix() * path[segment][2])
             end
-            local point_list = ""
-            for _, p in pairs(points) do
-               point_list = string.format("%s\n    [%f, %f, 0],",
-                                          point_list, p.x, p.y)
-            end
-            local create = string.format("%s = Polygon(%s\n    %s)", name, point_list, props)
-            return {create = create,
-                    anim = "Create(".. name .. "),"}
-         else
-            local seg_list = ""
-            for segment = 1, #path do
-               local s = ToManim * obj:matrix() * path[segment][1]
-               local t = ToManim * obj:matrix() * path[segment][2]
-               seg_list = string.format("%s\n    [[%f, %f, 0], [%f, %f, 0]],",
-                                        seg_list, s.x, s.y, t.x, t.y)
-            end
-            local create = string.format("%s = Polygram(%s\n    %s)", name, seg_list, props)
-            return {create = create,
-                    anim = "Create(".. name .. "),"}
          end
+
+         local seg_list = ""
+         if path.closed then -- closed polygon
+            for _, p in pairs(points) do
+               seg_list = string.format("%s\n    [%f, %f, 0],", seg_list, p.x, p.y)
+            end
+            seg_list = "[" .. seg_list .. "],"
+         else -- open polygon (polyline)
+            for i = 2, #points do
+               local s = points[i - 1]
+               local t = points[i]
+               seg_list = string.format("%s\n    [[%f, %f, 0], [%f, %f, 0]],", seg_list, s.x, s.y, t.x, t.y)
+            end
+         end
+         return {create = string.format("%s = Polygram(%s\n    %s)", name, seg_list, props),
+                 anim = "Create(".. name .. "),"}
       end
    end
    return nil
