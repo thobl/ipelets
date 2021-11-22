@@ -209,6 +209,61 @@ function PrintCode(code, depth)
    print(space .. string.gsub(code, "\n", "\n" .. space))
 end
 
+function RenderArc(arc)
+   -- render circular arc
+   local points = {}
+   local phi1, phi2 = arc:angles()
+   local delta_phi = (phi2 - phi1)
+   if delta_phi < 0 then
+      delta_phi = 2 * math.pi + delta_phi
+   end
+
+   local step = 0.1
+   for phi = step, delta_phi, step do
+      local p = arc:matrix() * ipe.Rotation(phi1 + phi) * ipe.Vector(1, 0)
+      table.insert(points, p)
+   end
+   table.insert(points, _G.select(2, arc:endpoints()))
+   return points
+end
+
+function RenderSpline(spline)
+   -- bezier spline -> de casteljau
+   if #spline == 4 then
+      local points = {}
+      local step = 0.02
+      for x = step, 1, step do
+         -- copy of the control points
+         local cps = {}
+         for i = 1, #spline do
+            cps[i] = spline[i]
+         end
+         for nr_cps = #cps, 1, -1 do
+            for i = 1, nr_cps - 1 do
+               -- print(cps[i], cps[i + 1])
+               cps[i] = (1 - x) * cps[i] + x * cps[i + 1]
+               -- print("->", cps[i])
+            end
+         end
+         table.insert(points, cps[1])
+      end
+      -- for i = 2, #spline do
+      --    table.insert(points, spline[i])
+      -- end
+      return points
+   end
+
+   -- b-spline -> convert to bezier splines
+   local points = {}
+   local beziers = ipe.splineToBeziers(spline, false)
+   for _, bezier in pairs(beziers) do
+      local new_points = RenderSpline(bezier)
+      for _, p in pairs(new_points) do
+         table.insert(points, p)
+      end
+   end
+   return points
+end
 
 function Create(model, obj, name)
    local props = Properties(model, obj)
@@ -252,19 +307,16 @@ function Create(model, obj, name)
                table.insert(points, ToManim * obj:matrix() * path[segment][2])
             elseif path[segment].type == "arc" then
                -- render circular arc
-               local arc = path[segment].arc
-               local phi1, phi2 = arc:angles()
-               local delta_phi = (phi2 - phi1)
-               if delta_phi < 0 then
-                  delta_phi = 2 * math.pi + delta_phi
+               local arc_points = RenderArc(path[segment].arc)
+               for _,p in pairs(arc_points) do
+                  table.insert(points, ToManim * obj:matrix() * p)
                end
-
-               local step = 0.1
-               for phi = step, delta_phi, step do
-                  local p = ToManim * obj:matrix() * arc:matrix() * ipe.Rotation(phi1 + phi) * ipe.Vector(1, 0)
-                  table.insert(points, p)
+            elseif path[segment].type == "spline" then
+               -- render spline
+               local spline_points = RenderSpline(path[segment])
+               for _,p in pairs(spline_points) do
+                  table.insert(points, ToManim * obj:matrix() * p)
                end
-               table.insert(points, ToManim * obj:matrix() * path[segment][2])
             end
          end
 
