@@ -247,15 +247,24 @@ function RenderSpline(spline)
          end
          table.insert(points, cps[1])
       end
-      -- for i = 2, #spline do
-      --    table.insert(points, spline[i])
-      -- end
       return points
    end
 
    -- b-spline -> convert to bezier splines
    local points = {}
    local beziers = ipe.splineToBeziers(spline, false)
+   for _, bezier in pairs(beziers) do
+      local new_points = RenderSpline(bezier)
+      for _, p in pairs(new_points) do
+         table.insert(points, p)
+      end
+   end
+   return points
+end
+
+function RenderClosedSpline(path)
+   local points = {}
+   local beziers = ipe.splineToBeziers(path, true)
    for _, bezier in pairs(beziers) do
       local new_points = RenderSpline(bezier)
       for _, p in pairs(new_points) do
@@ -298,30 +307,38 @@ function Create(model, obj, name)
       end
 
       -- curve (polyline, spline, arc)
-      if path.type == "curve" then
+      if path.type == "curve" or path.type == "closedspline" then
          -- collect the points on the curve
-         local points = {ToManim * obj:matrix() * path[1][1]}
-         for segment = 1, #path do
-            if path[segment].type == "segment" then
-               -- just an edge
-               table.insert(points, ToManim * obj:matrix() * path[segment][2])
-            elseif path[segment].type == "arc" then
-               -- render circular arc
-               local arc_points = RenderArc(path[segment].arc)
-               for _,p in pairs(arc_points) do
-                  table.insert(points, ToManim * obj:matrix() * p)
-               end
-            elseif path[segment].type == "spline" then
-               -- render spline
-               local spline_points = RenderSpline(path[segment])
-               for _,p in pairs(spline_points) do
-                  table.insert(points, ToManim * obj:matrix() * p)
+         local points
+         if path.type == "closedspline" then
+            points = RenderClosedSpline(path)
+            for key, p in pairs(points)  do
+               points[key] =  ToManim * obj:matrix() * p
+            end
+         else
+            points = {ToManim * obj:matrix() * path[1][1]}
+            for segment = 1, #path do
+               if path[segment].type == "segment" then
+                  -- just an edge
+                  table.insert(points, ToManim * obj:matrix() * path[segment][2])
+               elseif path[segment].type == "arc" then
+                  -- render circular arc
+                  local arc_points = RenderArc(path[segment].arc)
+                  for _,p in pairs(arc_points) do
+                     table.insert(points, ToManim * obj:matrix() * p)
+                  end
+               elseif path[segment].type == "spline" then
+                  -- render spline
+                  local spline_points = RenderSpline(path[segment])
+                  for _,p in pairs(spline_points) do
+                     table.insert(points, ToManim * obj:matrix() * p)
+                  end
                end
             end
          end
 
          local seg_list = ""
-         if path.closed then -- closed polygon
+         if path.type == "closedspline" or path.closed then -- closed polygon
             for _, p in pairs(points) do
                seg_list = string.format("%s\n    [%f, %f, 0],", seg_list, p.x, p.y)
             end
