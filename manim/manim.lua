@@ -186,19 +186,31 @@ function Color(model, name)
    return "rgb_to_color([" .. rgb.r .. ", " .. rgb.g .. ", " .. rgb.b .. "])"
 end
 
+function GetProperty(obj, name, model)
+   local prop = obj:get(name)
+   if model.doc:sheets():has(name, prop) then
+      return model.doc:sheets():find(name, prop)
+   end
+   return prop
+end
 
 function Properties(model, obj)
    local result = ""
+   -- stroke color
    if obj:get("pathmode") ~= "filled" then
       result = result .. "color = " .. Color(model, obj:get("stroke")) .. ","
    else
       result = result .. "stroke_opacity = 0.0, "
    end
 
+   -- fill color
    if obj:get("pathmode") ~= "stroked" then
       result = result .. "fill_color = " .. Color(model, obj:get("fill")) .. ", fill_opacity=1, "
    end
 
+   -- pen width
+   result = result .. "stroke_width = " .. 2 * GetProperty(obj, "pen", model) .. ","
+   
    return result
 end
 
