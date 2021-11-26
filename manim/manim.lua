@@ -197,20 +197,24 @@ end
 function Properties(model, obj)
    local result = ""
    -- stroke color
-   if obj:get("pathmode") ~= "filled" then
+   if obj:get("pathmode") == "stroked" or obj:get("pathmode") == "strokedfilled" or
+      obj:type() == "text" then
       result = result .. "color = " .. Color(model, obj:get("stroke")) .. ","
    else
       result = result .. "stroke_opacity = 0.0, "
    end
 
    -- fill color
-   if obj:get("pathmode") ~= "stroked" then
+   if obj:get("pathmode") == "filled" or obj:get("pathmode") == "strokedfilled"  then
       result = result .. "fill_color = " .. Color(model, obj:get("fill")) .. ", fill_opacity=1, "
    end
 
    -- pen width
-   result = result .. "stroke_width = " .. 2 * GetProperty(obj, "pen", model) .. ","
-   
+   local pen = GetProperty(obj, "pen", model)
+   if _G.type(pen) == "number" then
+      result = result .. "stroke_width = " .. 2 * pen .. ","
+   end
+
    return result
 end
 
@@ -363,9 +367,20 @@ function Create(model, obj, name)
             end
          end
          return {create = string.format("%s = Polygram(%s\n    %s)", name, seg_list, props),
-                 anim = "Create(".. name .. "),"}
+                 anim = "Create(" .. name .. "),"}
       end
    end
+
+   if obj:type() == "text" then
+      local textsize = GetProperty(obj, "textsize", model)
+      local p = ToManim * obj:matrix() * obj:position()
+      local create = string.format("%s = Tex(r\"{%s %s}\", font_size = 20, %s)",
+                                   name, textsize, obj:text(), props)
+      local move_to_p = string.format("%s.move_to([%f, %f, 0])", name, p.x, p.y)
+      return {create = create .. "\n" .. move_to_p,
+              anim = "Create(" .. name .. "),"}
+   end
+
    return nil
 end
 
