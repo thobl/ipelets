@@ -372,10 +372,18 @@ function Create(model, obj, name)
    end
 
    if obj:type() == "text" then
+      -- text size (small, large, huge, ...)
       local textsize = GetProperty(obj, "textsize", model)
-      local p = ToManim * obj:matrix() * obj:position()
+
+      -- center point of the text
+      local r, m = ipe.Rect(), ipe.Matrix()
+      obj:addToBBox(r, m)
+      local p = 0.5 * (ToManim * r:topRight() + ToManim * r:bottomLeft())
+
+      -- manim output
       local create = string.format("%s = Tex(r\"{%s %s}\", font_size = 20, %s)",
                                    name, textsize, obj:text(), props)
+
       local move_to_p = string.format("%s.move_to([%f, %f, 0])", name, p.x, p.y)
       return {create = create .. "\n" .. move_to_p,
               anim = "Create(" .. name .. "),"}
