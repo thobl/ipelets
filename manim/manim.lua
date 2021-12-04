@@ -218,13 +218,6 @@ function Properties(model, obj)
    return result
 end
 
-
-function PrintCode(code, depth)
-   local format_string = string.format("%%%ds", depth * 4)
-   local space = string.format(format_string, "")
-   print(space .. string.gsub(code, "\n", "\n" .. space))
-end
-
 function RenderArc(arc)
    -- render circular arc
    local points = {}
@@ -393,6 +386,119 @@ function Create(model, obj, name)
 end
 
 
+function PrintCode(code, depth)
+   local format_string = string.format("%%%ds", depth * 4)
+   local space = string.format(format_string, "")
+    print(space .. string.gsub(code, "\n", "\n" .. space))
+end
+
+
+function Transform(model, obj_old, name_old, obj_new, name_new)
+   -- fallback: just create a new object and let manim figure out how
+   -- to transform one into the other
+   function TransformByCreate()
+      local create_res = Create(model, obj_new, name_new)
+      return {create = create_res.create,
+              anim = "Transform(" .. name_old .. ", " .. name_new .. "),",
+              remove = "self.remove(".. name_old .. ")",
+              name = name_new}
+   end
+
+   -- local anim = name_old .. ".animate"
+   local anim_fun_name = "anim_" .. name_old .. "_" .. name_new
+   local anim_fun = string.format("\n%s.save_state()\ndef %s(mob, alpha):\n    mob.restore()",
+                                  name_old, anim_fun_name)
+
+   local xml_old, xml_new = obj_old:xml(), obj_new:xml()
+   local split_attr_content = "<%a+ ([^>]+)>([^<]+)</%a+>"
+   local parse_key_value_pairs = "(%a+)=\"([^\"]+)\""
+   local _, _, attr_old_str, content_old = xml_old:find(split_attr_content)
+   local _, _, attr_new_str, content_new = xml_new:find(split_attr_content)
+
+   if (content_old ~= content_new) then
+      return TransformByCreate()
+   end
+
+   local attr_old, attr_new, diff = {}, {}, {}
+   for  k, v in attr_old_str:gmatch(parse_key_value_pairs) do
+      attr_old[k] = v
+   end
+   for  k, v in attr_new_str:gmatch(parse_key_value_pairs) do
+      attr_new[k] = v
+   end
+
+   for k, v in pairs(attr_new) do
+      if attr_old[k] ~= v then
+         diff[k] = {old = attr_old[k], new = v}
+      end
+   end
+
+   for k, v in pairs(attr_old) do
+      if attr_new[k] ~= v then
+         diff[k] = {old = v, new = attr_new[k]}
+      end
+   end
+
+   for k, v in pairs(diff) do
+      if k == "fill" then
+         if v.old and v.new then
+            anim_fun = string.format([[%s
+    color = interpolate_color(%s, %s, alpha)
+    mob.set_fill(color)]], anim_fun, Color(model, v.old), Color(model, v.new))
+         elseif v.new then
+            anim_fun = string.format([[%s
+    mob.set_fill(color=%f, opacity=alpha)]], anim_fun, Color(model, v.new))
+         else
+            anim_fun = string.format([[%s
+    mob.set_fill(color=%f, opacity=1 - alpha)]], anim_fun, Color(model, v.old))
+         end
+      elseif k == "matrix" then
+
+         local transformation = ToManim * obj_new:matrix() * obj_old:matrix():inverse() * ToManim:inverse()
+         local a, c, b, d, e, f = table.unpack(transformation:elements())
+
+
+         if ipe.Vector(a, c):sqLen() ~= ipe.Vector(b, d):sqLen() then
+            -- something more complicated than just scaling, rotating, and translating
+            return TransformByCreate()
+         end
+
+         local scale = ipe.Vector(a, c):len()
+         local rot_angle = math.asin(c / scale)
+
+         if rot_angle == 0 then
+            -- just scaling + translating
+            local translation = transformation * ipe.Vector(0, 0)
+            anim_fun = string.format([[%s
+    mob.scale(interpolate(1, %f, alpha), about_point=ORIGIN)
+    mob.shift([alpha * %f, alpha * %f, 0])]], anim_fun, scale, translation.x, translation.y)
+         else
+            -- rotation: some linear algebra magic to figure out the
+            -- center of rotation; this has two advantages: we don't
+            -- need an additional translation and the transformation
+            -- looks nicer
+            local rot_center_x = (e * (1 - d) + b * f) / ((1 - a) * (1 - d) - b * c)
+            local rot_center_y = (f + c * rot_center_x) / (1 - d)
+            local center = string.format("about_point=[%f, %f, 0]", rot_center_x, rot_center_y)
+            -- TODO: if the center of rotation is far away, a rotation
+            -- around the center of the object + a translation would
+            -- look nicer
+
+            anim_fun = string.format([[%s
+    mob.rotate(alpha * %f, %s)
+    mob.scale(interpolate(1, %f, alpha), %s)]], anim_fun, rot_angle, center, scale, center)
+         end
+
+      else
+         return TransformByCreate()
+      end
+   end
+   return {create = anim_fun,
+           anim = string.format("UpdateFromAlphaFunc(%s, %s),", name_old, anim_fun_name),
+           remove = "",
+           name = name_old}
+end
+
 function Export(model)
    PrintCode("from manim import *", 0)
    PrintCode("", 0)
@@ -419,13 +525,13 @@ function Export(model)
 
       -- collect animations occurring for this view
       local anims = {}
-      local post_anim = {}
+      local remove = {}
 
       -- deletion animations (objects from the previous view no longer
       -- existing here)
       for _, name in pairs(to_be_removed) do
          table.insert(anims, "FadeOut(" .. name .. "),")
-         table.insert(post_anim, "self.remove(".. name .. ")")
+         table.insert(remove, "self.remove(".. name .. ")")
       end
       to_be_removed = {}
 
@@ -442,13 +548,12 @@ function Export(model)
 
          elseif prev_obj ~= obj then
             -- new object with existing label -> transform
-            local name = VariableName(label, view)
-            local prev_name = name_by_label[label]
-            local res = Create(model, obj, name)
+            local res = Transform(model, prev_obj, name_by_label[label],
+                                  obj, VariableName(label, view))
             PrintCode(res.create, 2)
-            table.insert(anims, "Transform(" .. prev_name .. ", " .. name .. "),")
-            table.insert(post_anim, "self.remove(".. prev_name .. ")")
-            name_by_label[label] = name
+            table.insert(anims, res.anim)
+            table.insert(remove, res.remove)
+            name_by_label[label] = res.name
          end
 
          -- objects to be removed in the next view
@@ -466,7 +571,7 @@ function Export(model)
       PrintCode(")", 2)
 
       -- post-animiation cleanup
-      for _, post in pairs(post_anim) do
+      for _, post in pairs(remove) do
          PrintCode(post, 2)
       end
    end
