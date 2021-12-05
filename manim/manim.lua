@@ -389,7 +389,7 @@ end
 function PrintCode(code, depth)
    local format_string = string.format("%%%ds", depth * 4)
    local space = string.format(format_string, "")
-    print(space .. string.gsub(code, "\n", "\n" .. space))
+   print(space .. string.gsub(code, "\n", "\n" .. space))
 end
 
 
@@ -404,11 +404,7 @@ function Transform(model, obj_old, name_old, obj_new, name_new)
               name = name_new}
    end
 
-   -- local anim = name_old .. ".animate"
-   local anim_fun_name = "anim_" .. name_old .. "_" .. name_new
-   local anim_fun = string.format("\n%s.save_state()\ndef %s(mob, alpha):\n    mob.restore()",
-                                  name_old, anim_fun_name)
-
+   -- computing a diff between attributes of the old and the new object
    local xml_old, xml_new = obj_old:xml(), obj_new:xml()
    local split_attr_content = "<%a+ ([^>]+)>([^<]+)</%a+>"
    local parse_key_value_pairs = "(%a+)=\"([^\"]+)\""
@@ -439,32 +435,50 @@ function Transform(model, obj_old, name_old, obj_new, name_new)
       end
    end
 
+   -- change multiple things in one animation via an update function
+   -- depending on alpha going from 0 (start of the animation) to 1
+   -- (end of the animation)
+   local anim_fun_name = "anim_" .. name_old .. "_" .. name_new
+   local anim_fun = string.format("\n%s.save_state()\ndef %s(mob, alpha):\n    mob.restore()",
+                                  name_old, anim_fun_name)
+
+   -- collect the changes in different attributes by iterating over
+   -- the diff
    for k, v in pairs(diff) do
-      if k == "fill" then
+
+      if k == "fill" then -- change in fill color
          if v.old and v.new then
+            -- interpolate the colors
             anim_fun = string.format([[%s
     color = interpolate_color(%s, %s, alpha)
     mob.set_fill(color)]], anim_fun, Color(model, v.old), Color(model, v.new))
          elseif v.new then
+            -- from unfilled to filled
             anim_fun = string.format([[%s
     mob.set_fill(color=%f, opacity=alpha)]], anim_fun, Color(model, v.new))
          else
+            -- from filled to unfilled
             anim_fun = string.format([[%s
     mob.set_fill(color=%f, opacity=1 - alpha)]], anim_fun, Color(model, v.old))
          end
-      elseif k == "matrix" then
 
+      elseif k == "matrix" then -- change in the transformation matrix
+         -- transformation matrix in the Manim coordinate system:
+         -- ⌈ a c e ⌉
+         -- | b d f |
+         -- ⌊ 0 0 1 ⌋
          local transformation = ToManim * obj_new:matrix() * obj_old:matrix():inverse() * ToManim:inverse()
-         local a, c, b, d, e, f = table.unpack(transformation:elements())
+         local a, b, c, d, e, f = table.unpack(transformation:elements())
 
-
-         if ipe.Vector(a, c):sqLen() ~= ipe.Vector(b, d):sqLen() then
-            -- something more complicated than just scaling, rotating, and translating
+         if ipe.Vector(a, b):sqLen() ~= ipe.Vector(c, d):sqLen() then
+            -- different scaling factor in x- and y-direction ->
+            -- something more complicated than just scaling, rotating,
+            -- and translating
             return TransformByCreate()
          end
 
-         local scale = ipe.Vector(a, c):len()
-         local rot_angle = math.asin(c / scale)
+         local scale = ipe.Vector(a, b):len()
+         local rot_angle = math.asin(b / scale)
 
          if rot_angle == 0 then
             -- just scaling + translating
@@ -474,19 +488,34 @@ function Transform(model, obj_old, name_old, obj_new, name_new)
     mob.shift([alpha * %f, alpha * %f, 0])]], anim_fun, scale, translation.x, translation.y)
          else
             -- rotation: some linear algebra magic to figure out the
-            -- center of rotation; this has two advantages: we don't
-            -- need an additional translation and the transformation
-            -- looks nicer
-            local rot_center_x = (e * (1 - d) + b * f) / ((1 - a) * (1 - d) - b * c)
-            local rot_center_y = (f + c * rot_center_x) / (1 - d)
-            local center = string.format("about_point=[%f, %f, 0]", rot_center_x, rot_center_y)
-            -- TODO: if the center of rotation is far away, a rotation
-            -- around the center of the object + a translation would
-            -- look nicer
+            -- center of rotation
+            local rot_center_x = (e * (1 - d) + c * f) / ((1 - a) * (1 - d) - c * b)
+            local rot_center_y = (f + b * rot_center_x) / (1 - d)
+            local rot_center = ipe.Vector(rot_center_x, rot_center_y)
 
-            anim_fun = string.format([[%s
+            -- check if center of rotation is inside the bounding box
+            -- (or close to it); if yes, just do a rotation around
+            -- this center (without translation); otherwise, do a
+            -- rotation around the center of the bounding box and add
+            -- a translation (for straight movement)
+            local bbox = ipe.Rect()
+            obj_old:addToBBox(bbox, ToManim)
+            local bbox_center = 0.5 * (bbox:topRight() + bbox:bottomLeft())
+
+            if bbox:contains(0.1 * bbox_center + 0.9 * rot_center) then
+               local center = string.format("about_point=[%f, %f, 0]", rot_center.x, rot_center.y)
+               anim_fun = string.format([[%s
     mob.rotate(alpha * %f, %s)
     mob.scale(interpolate(1, %f, alpha), %s)]], anim_fun, rot_angle, center, scale, center)
+            else
+               local translation = transformation * bbox_center - bbox_center
+               local center = string.format("about_point=[%f, %f, 0]", bbox_center.x, bbox_center.y)
+               anim_fun = string.format([[%s
+    mob.rotate(alpha * %f, %s)
+    mob.scale(interpolate(1, %f, alpha), %s)
+    mob.shift([alpha * %f, alpha * %f, 0])]],
+    anim_fun, rot_angle, center, scale, center, translation.x, translation.y)
+            end
          end
 
       else
