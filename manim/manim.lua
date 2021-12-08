@@ -455,12 +455,35 @@ function Transform(model, obj_old, name_old, obj_new, name_new)
          elseif v.new then
             -- from unfilled to filled
             anim_fun = string.format([[%s
-    mob.set_fill(color=%f, opacity=alpha)]], anim_fun, Color(model, v.new))
+    mob.set_fill(color=%s, opacity=alpha)]], anim_fun, Color(model, v.new))
          else
             -- from filled to unfilled
             anim_fun = string.format([[%s
-    mob.set_fill(color=%f, opacity=1 - alpha)]], anim_fun, Color(model, v.old))
+    mob.set_fill(color=%s, opacity=1 - alpha)]], anim_fun, Color(model, v.old))
          end
+
+      elseif k == "stroke" then -- change in stroke color
+         if v.old and v.new then
+            -- interpolate the colors
+            anim_fun = string.format([[%s
+    color = interpolate_color(%s, %s, alpha)
+    mob.set_stroke(color)]], anim_fun, Color(model, v.old), Color(model, v.new))
+         elseif v.new then
+            -- from no stroke to stroke
+            anim_fun = string.format([[%s
+    mob.set_stroke(color=%s, opacity=alpha)]], anim_fun, Color(model, v.new))
+         else
+            -- from stroke to no stroke
+            anim_fun = string.format([[%s
+    mob.set_stroke(color=%s, opacity=1 - alpha)]], anim_fun, Color(model, v.old))
+         end
+
+      elseif k == "pen" then -- change in stroke width
+         local pen_old = 2 * GetProperty(obj_old, "pen", model)
+         local pen_new = 2 * GetProperty(obj_new, "pen", model)
+         anim_fun = string.format([[%s
+    width = interpolate(%f, %f, alpha)
+    mob.set_stroke(width=width)]], anim_fun, pen_old, pen_new)
 
       elseif k == "matrix" then -- change in the transformation matrix
          -- transformation matrix in the Manim coordinate system:
