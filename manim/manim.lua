@@ -142,17 +142,19 @@ end
 
 function ObjectsByView(model, page)
    local obj_by_view = {}
+   local z_index_by_label = {}
    for view = 1, page:countViews() do
       obj_by_view[view] = {}
    end
 
    local unlabeled_id = 1
-   for _, obj, _, layer in page:objects() do
+   for z_index, obj, _, layer in page:objects() do
       local label = GetObjectLabel(obj)
       if not label then
          label = "object_with_no_label" .. unlabeled_id
          unlabeled_id = unlabeled_id + 1
       end
+      z_index_by_label[label] = z_index
 
       for view = 1, page:countViews() do
          if page:visible(view, layer) then
@@ -164,7 +166,7 @@ function ObjectsByView(model, page)
       end
    end
 
-   return(obj_by_view)
+   return obj_by_view, z_index_by_label
 end
 
 
@@ -178,7 +180,8 @@ end
 AspectRatio = 16.0 / 9.0
 ManimHeight = 8.0
 ManimWidth = ManimHeight * AspectRatio
-Scale = 0.02
+Scale = 8 / 144
+-- Scale = 0.02
 ToManim = ipe.Translation(- ManimWidth / 2, - ManimHeight / 2) * ipe.Matrix(Scale, 0, 0, Scale)
 
 function Color(model, name)
@@ -283,8 +286,9 @@ function RenderClosedSpline(path)
    return points
 end
 
-function Create(model, obj, name)
+function Create(model, obj, name, z_index)
    local props = Properties(model, obj)
+   local post = string.format(".set_z_index(%d)", z_index)
 
    if obj:type() == "path" then
       local shape = obj:shape()
@@ -301,13 +305,13 @@ function Create(model, obj, name)
 
          -- circle
          if v1:sqLen() == v2:sqLen() then
-            return {create = string.format("%s = Circle(radius=%f, arc_center=[%f, %f, 0.0], %s)",
+            return {create = string.format("%s = Circle(radius=%f, arc_center=[%f, %f, 0.0], %s)" .. post,
                                            name, v1:len(), c.x, c.y, props),
                     anim = "Create(".. name .. "),"}
          end
 
          -- ellpise
-         local create = string.format("%s = Ellipse(width=%f, height=%f, arc_center=[%f, %f, 0.0], %s)",
+         local create = string.format("%s = Ellipse(width=%f, height=%f, arc_center=[%f, %f, 0.0], %s)" .. post,
                                       name, 2 * v1:len(), 2 * v2:len(), c.x, c.y, props)
          local rotate = string.format("%s.rotate(%f)", name, v1:angle())
 
@@ -359,7 +363,7 @@ function Create(model, obj, name)
                seg_list = string.format("%s\n    [[%f, %f, 0], [%f, %f, 0]],", seg_list, s.x, s.y, t.x, t.y)
             end
          end
-         return {create = string.format("%s = Polygram(%s\n    %s)", name, seg_list, props),
+         return {create = string.format("%s = Polygram(%s\n    %s)" .. post, name, seg_list, props),
                  anim = "Create(" .. name .. "),"}
       end
    end
@@ -374,8 +378,8 @@ function Create(model, obj, name)
       local p = 0.5 * (ToManim * r:topRight() + ToManim * r:bottomLeft())
 
       -- manim output
-      local create = string.format("%s = Tex(r\"{%s %s}\", font_size = 20, %s)",
-                                   name, textsize, obj:text(), props)
+      local create = string.format("%s = Tex(r\"{%s %s}\", font_size = %f, %s)" .. post,
+                                   name, textsize, obj:text(), 1000 * Scale, props)
 
       local move_to_p = string.format("%s.move_to([%f, %f, 0])", name, p.x, p.y)
       return {create = create .. "\n" .. move_to_p,
@@ -393,11 +397,11 @@ function PrintCode(code, depth)
 end
 
 
-function Transform(model, obj_old, name_old, obj_new, name_new)
+function Transform(model, obj_old, name_old, obj_new, name_new, z_index_new)
    -- fallback: just create a new object and let manim figure out how
    -- to transform one into the other
    function TransformByCreate()
-      local create_res = Create(model, obj_new, name_new)
+      local create_res = Create(model, obj_new, name_new, z_index_new)
       return {create = create_res.create,
               anim = "Transform(" .. name_old .. ", " .. name_new .. "),",
               remove = "self.remove(".. name_old .. ")",
@@ -559,7 +563,7 @@ function Export(model)
    PrintCode("self.camera.background_color = WHITE", 2)
 
    local p = model:page()
-   local obj_by_view = ObjectsByView(model, p)
+   local obj_by_view, z_index_by_label = ObjectsByView(model, p)
 
    -- dummy entries ith no objects (so there has to be no special
    -- treatment for the first or last view)
@@ -593,7 +597,7 @@ function Export(model)
          if not prev_obj then
             -- object with new label -> create
             local name = VariableName(label, view)
-            local res = Create(model, obj, name)
+            local res = Create(model, obj, name, z_index_by_label[label])
             PrintCode(res.create, 2)
             table.insert(anims, res.anim)
             name_by_label[label] = name
@@ -601,7 +605,7 @@ function Export(model)
          elseif prev_obj ~= obj then
             -- new object with existing label -> transform
             local res = Transform(model, prev_obj, name_by_label[label],
-                                  obj, VariableName(label, view))
+                                  obj, VariableName(label, view), z_index_by_label[label])
             PrintCode(res.create, 2)
             table.insert(anims, res.anim)
             table.insert(remove, res.remove)
