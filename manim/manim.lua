@@ -403,8 +403,8 @@ function Transform(model, obj_old, name_old, obj_new, name_new, z_index_new)
    function TransformByCreate()
       local create_res = Create(model, obj_new, name_new, z_index_new)
       return {create = create_res.create,
-              anim = "Transform(" .. name_old .. ", " .. name_new .. "),",
-              remove = "self.remove(".. name_old .. ")",
+              anim = "ReplacementTransform(" .. name_old .. ", " .. name_new .. "),",
+              remove = "",
               name = name_new}
    end
 
