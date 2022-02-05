@@ -16,6 +16,7 @@ find a bunch of them.
     of the hyperbolic plane.
   * **[scale](./scale):** Scale stuff that is usually not affected by
     scaling.
+  * **[quicklink](./quicklink):** Convenient way of creating links.
 
 For even more ipelets maintained by other people, check out the [Ipe
 Wiki](https://github.com/otfried/ipe-wiki/wiki/Ipelets)
