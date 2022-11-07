@@ -18,6 +18,8 @@ find a bunch of them.
   * **[quicklink](./quicklink):** Convenient way of creating links.
   * **[scale](./scale):** Scale stuff that is usually not affected by
     scaling.
+  * **[z-order by layer](./z-order-by-layer):** Sort the z-order of
+    objects by layer.
 
 For even more ipelets maintained by other people, check out the [Ipe
 Wiki](https://github.com/otfried/ipe-wiki/wiki/Ipelets)
